@@ -11,21 +11,21 @@ for(ii in unique(doc$legislature)) {
   
   if(length(u)) {
     
-    cat("Legislature", ii, ": missing", length(unique(u)), "sponsor(s)")
+    cat("SE Legislature", ii, ": missing", length(unique(u)), "sponsor(s)")
     u = grepl(paste0("^", paste0(unique(u), collapse = "|"), ";"), data$sponsors)
     
     cat(", removing", sum(u), "bills\n")
     data = data[ !u, ]
   }
   
-  cat("Legislature", ii, ":", nrow(data), "cosponsored documents, ")
+  cat("SE Legislature", ii, ":", nrow(data), "cosponsored documents, ")
   cat("\n")
   
   #
   # directed edge list
   #
   
-  edges = rbind.fill(lapply(data$sponsors, function(d) {
+  edges = rbind_all(lapply(data$sponsors, function(d) {
     
     w = unlist(strsplit(d, ";"))
     

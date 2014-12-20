@@ -143,7 +143,7 @@ if(!file.exists(sponsors)) {
   # fix constituency
   sen[ with(sen, grepl("JEAN PIERRE BEL", name) & constituency != "Ariège Midi-Pyrénées"), "constituency"] = "Ariège Midi-Pyrénées"
 
-  d = ddply(sen, .(name), summarise, n = length(unique(url)))
+  d = summarise(group_by(sen, name), n = n_distinct(url))
   u = d$n > 1
   if(sum(u)) {
     warning(paste(sum(u), "homonyms"))

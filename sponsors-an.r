@@ -192,7 +192,7 @@ if(!file.exists(data)) {
   dep$name[ with(dep, name == "JEAN BERNARD" & constituency == "Isère") ] = "JEAN BERNARD ISERE"
   
   # detect homonyms
-  d = ddply(dep, .(name), summarise, n = length(unique(url)))
+  d = summarise(group_by(dep, name), n = n_distinct(url))
   u = d$n > 1
   if(sum(u)) {
     cat(sum(u), "homonyms detected:\n")
@@ -252,17 +252,7 @@ if(!file.exists(data)) {
     x = as.numeric(unlist(strsplit(x, ";")))
     dep$nyears[ i ] = sum(x < legs[ as.character(dep$legislature[ i ]) ])
   }
-  
-  # # legislature, generalised to all rows
-  # dep = ddply(dep, .(url), transform, nyears = as.character(paste0(sort(legislature), collapse = ";")))
-  
-  # # seniority (close enough to real value)
-  # for(i in 1:nrow(dep)) {
-  #   x = dep$nyears[ i ]
-  #   x = as.numeric(unlist(strsplit(x, ";")))
-  #   dep$nyears[ i ] = 5 * sum(dep$legislature[ i ] > x)
-  # }
-  
+    
   # subset to legislatures under examination
   dep = subset(dep, legislature %in% sessions)
   
