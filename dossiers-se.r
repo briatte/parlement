@@ -48,7 +48,7 @@ if(!file.exists(bills)) {
       cat("Dropping:", sum(dnk), "senators (no sponsorships)\n")
     
     # drop senators for very short periods
-    cat("Dropping:", length(unique(sp$name[ nul ][ !dnk ])),
+    cat("Dropping:", n_distinct(sp$name[ nul ][ !dnk ]),
         "sponsors (not senators)\n")
     
     sp = sp[ !is.na(sp$autcod), ]
@@ -72,7 +72,7 @@ if(!file.exists(bills)) {
     if(any(dnk))
       cat("Dropping:", sum(dnk), "unmatched senator(s)\n")
     
-    cat("Dropping:", length(unique(s$autcod[ nul ][ !dnk ])), "unmatched sponsor(s)\n")
+    cat("Dropping:", n_distinct(s$autcod[ nul ][ !dnk ]), "unmatched sponsor(s)\n")
     
     cat("Dropping:", nrow(s[ nul, ]), "unmatched sponsorship(s)",
         round(100 * nrow(s[ nul, ]) / nrow(s), 2), "% of total\n")
@@ -104,7 +104,7 @@ if(!file.exists(bills)) {
   
   b = subset(b, texcod %in% unique(s$uid))
   
-  cat("Parsing:", length(unique(b$texcod)), "bills")
+  cat("Parsing:", n_distinct(b$texcod), "bills")
   
   names(b)[ names(b) == "texnum" ] = "texte"
   names(b)[ names(b) == "texcod" ] = "uid"

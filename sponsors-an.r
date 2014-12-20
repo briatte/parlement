@@ -92,7 +92,7 @@ if(!file.exists(data)) {
     
   }
   
-  cat("Parsing", length(unique(dep$url)), "photos\n")
+  cat("Parsing", n_distinct(dep$url), "photos\n")
   
   # download photos
   dep$photo = 0

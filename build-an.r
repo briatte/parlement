@@ -8,7 +8,7 @@ for(ii in unique(doc$legislature)) {
 
   if(length(u)) {
 
-    cat("AN Legislature", ii, ": missing", length(unique(u)), "sponsor(s)")
+    cat("AN Legislature", ii, ": missing", n_distinct(u), "sponsor(s)")
     u = grepl(paste0("^", paste0(unique(u), collapse = "|"), ";"), data$sponsors)
     
     cat(", removing", sum(u), "bills\n")
