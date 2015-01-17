@@ -11,8 +11,10 @@ if(!file.exists(sponsors)) {
     file = paste0("raw_se/", i, ".html")
     
     if(!file.exists(file))
-      download.file(paste0(root, ifelse(ancien, paste0(i, "-5eme-republique"), i), "/senatl.html"),
-                    file, mode = "wb", quiet = TRUE)
+      download.file(paste0(root, "/", ifelse(ancien, 
+                                             paste0(i, "-5eme-republique"), 
+                                             i), "/senatl.html"),
+                           file, mode = "wb", quiet = TRUE)
     
     html = htmlParse(file, encoding = "UTF-8")
     urls = unique(as.vector(xpathSApply(html, "//a[contains(@href,'/senateur/')]/@href")))
@@ -25,17 +27,17 @@ if(!file.exists(sponsors)) {
       file = paste0("raw_se", x)
       
       if(!file.exists(file))
-        download.file(link, file, mode = "wb", quiet = TRUE)
-      
-      html = try(htmlParse(file, encoding = "UTF-8"))
-      
-      if("try-error" %in% class(html)) {
+        try(download.file(link, file, mode = "wb", quiet = TRUE))
+            
+      if(!file.info(file)$size) {
         
-        cat("Could not find senator details at", x, "\n")
+        cat("Failed to download senator:", x, "\n")
+        file.remove(file)
         
       } else {
         
         # cat("Senator", x)
+        html = htmlParse(file, encoding = "UTF-8")
         
         civ = str_clean(xpathSApply(html, "//dd", xmlValue))
         civ = civ[ grepl("Né(e)? le", civ) ]
@@ -69,7 +71,7 @@ if(!file.exists(sponsors)) {
         nyears = paste0(nyears, collapse = ";")
         
         circo = xpathSApply(html, "//h2[@class='subtitle-02']", xmlValue)
-        circo = circo[ grepl(ifelse(ancien, "Ancien sénat", "Sénat"), circo) ]
+        circo = circo[ grepl("(S|s)énat", circo) ]
         circo = gsub("(Ancien )?(S|s)énat(eur|rice)( de | de l'| d'| des | de la | du | représentant les )", 
                      "", circo)
         circo = str_trim(gsub("\\s+", " ", circo))
@@ -202,9 +204,15 @@ if(!file.exists(sponsors)) {
   sen = merge(sen, read.csv(geo, stringsAsFactors = FALSE),
                     by = "constituency", all.x = TRUE)
   
-  # clean up constituencies (approximative)
-  sen$constituency = gsub("\\s+(Rhône-Alpes|Picardie|Auvergne|Provence-Alpes-Côte d'Azur|Champagne-Ardenne|Languedoc-Roussillon|Midi-Pyrénées|Alsace|Basse-Normandie|Poitou-Charentes|Centre|Limousin|Haute-Corse|Bourgogne|Bretagne|Côtes-d'Armor|Aquitaine|Franche-Comté|Ile-de-France|Haute-Normandie|Guadeloupe|Guyane|Mayotte|Martinique|Iles Wallis et Futuna|Doubs|PaysLoire|Alsace|Lorraine|Nouvelle-Calédonie|Nord-Pas-de-Calais|Polynésie française|Saint-Barthélemy|Saint-Pierre-et-Miquelon|Hauts-de-Seine|de Paris|Val-de-Marne|Seine-Maritime|La Réunion|Corse)", "", sen$constituency)
+  # remove regions from constituencies
+  sen$constituency = gsub("\\s+(Rhône-Alpes|Picardie|Auvergne|Provence-Alpes-Côte d'Azur|Champagne-Ardenne|Languedoc-Roussillon|Midi-Pyrénées|Alsace|Basse-Normandie|Poitou-Charentes|Centre|Limousin|Haute-Corse|Bourgogne|Bretagne|Côtes-d'Armor|Aquitaine|Franche-Comté|Ile-de-France|Haute-Normandie|Guadeloupe|Guyane|Mayotte|Martinique|Iles Wallis et Futuna|Doubs|PaysLoire|Alsace|Lorraine|Nouvelle-Calédonie|Nord-Pas-de-Calais|Polynésie française|Saint-Barthélemy|Saint-Pierre-et-Miquelon|Hauts-de-Seine|de Paris|Val-de-Marne|Seine-Maritime|La Réunion|Corse)", "", 
+                          sen$constituency)
   sen$constituency[ sen$constituency == "Corse" ] = "Haute-Corse"
+  sen$constituency[ sen$constituency == "Iles Wallis et Futuna" ] = "Wallis et Futuna"
+  sen$constituency[ sen$constituency == "Côtes-du-Nord" ] = "Côtes-d'Armor"
+  sen$constituency[ sen$constituency == "Alpes de Haute-Provence" ] = "Alpes-de-Haute-Provence"
+  sen$constituency[ sen$constituency == "Seine-Inférieure" ] = "Seine-Maritime"
+  sen$constituency = gsub("\\s", "_", sen$constituency)
   
   j = c("legislature", "fullname", "name", "family_name", "sex", "born",
         "party", "constituency", "nyears", "lon", "lat", "url", "photo")
@@ -215,10 +223,3 @@ if(!file.exists(sponsors)) {
 }
 
 s = read.csv(sponsors, stringsAsFactors = FALSE)
-
-# constituencies
-s$constituency[ s$constituency == "Iles Wallis et Futuna" ] = "Wallis et Futuna"
-s$constituency[ s$constituency == "Côtes-du-Nord" ] = "Côtes-d'Armor"
-s$constituency[ s$constituency == "Alpes de Haute-Provence" ] = "Alpes-de-Haute-Provence"
-s$constituency[ s$constituency == "Seine-Inférieure" ] = "Seine-Maritime"
-s$constituency = gsub("\\s", "_", s$constituency)

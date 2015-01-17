@@ -19,7 +19,6 @@ for(ii in unique(doc$legislature)) {
   }
   
   cat("SE Legislature", ii, ":", nrow(data), "cosponsored documents, ")
-  cat("\n")
   
   #
   # directed edge list

@@ -8,7 +8,7 @@ This repository contains code to build cosponsorship networks from bills passed 
 
 The code is a simplified version of the [`neta`](https://github.com/briatte/neta) repository, which handles more data in more ways.
 
-The Senate data comes from their [open data portal][ds].
+The Senate data comes from their [open data portal][ds]. The code was tested on bills and sponsors up to the senatorial election of September 2014.
 
 [ds]: http://data.senat.fr/
 
