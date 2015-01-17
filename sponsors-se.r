@@ -11,7 +11,7 @@ if(!file.exists(sponsors)) {
     file = paste0("raw_se/", i, ".html")
     
     if(!file.exists(file))
-      download.file(paste0(root, ifelse(anciens, paste0(i, "-5eme-republique"), i), "/senatl.html"),
+      download.file(paste0(root, ifelse(ancien, paste0(i, "-5eme-republique"), i), "/senatl.html"),
                     file, mode = "wb", quiet = TRUE)
     
     html = htmlParse(file, encoding = "UTF-8")
@@ -215,3 +215,10 @@ if(!file.exists(sponsors)) {
 }
 
 s = read.csv(sponsors, stringsAsFactors = FALSE)
+
+# constituencies
+s$constituency[ s$constituency == "Iles Wallis et Futuna" ] = "Wallis et Futuna"
+s$constituency[ s$constituency == "Côtes-du-Nord" ] = "Côtes-d'Armor"
+s$constituency[ s$constituency == "Alpes de Haute-Provence" ] = "Alpes-de-Haute-Provence"
+s$constituency[ s$constituency == "Seine-Inférieure" ] = "Seine-Maritime"
+s$constituency = gsub("\\s", "_", s$constituency)

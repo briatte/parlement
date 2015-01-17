@@ -393,3 +393,12 @@ if(!file.exists(data)) {
 }
 
 dep = read.csv(data, stringsAsFactors = FALSE)
+
+# constituencies
+dep$constituency[ dep$constituency == "Seine-St-Denis" ] = "Seine-Saint-Denis"
+dep$constituency[ dep$constituency == "Basses-Alpes" ] = "Alpes-de-Haute-Provence"
+dep$constituency[ dep$constituency == "Côtes d'Armor" ] = "Côtes-d'Armor"
+dep$constituency[ dep$constituency == "Côtes-du-Nord" ] = "Côtes-d'Armor" # same as above
+dep$constituency[ dep$constituency == "Territoire-de-Belfort" ] = "Territoire de Belfort"
+dep$constituency[ dep$constituency == "Wallis-et-Futuna" ] = "Wallis et Futuna"
+dep$constituency = gsub("\\s", "_", dep$constituency)

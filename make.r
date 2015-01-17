@@ -12,7 +12,8 @@ dir.create("data"      , showWarnings = FALSE)
 dir.create("photos_an" , showWarnings = FALSE)
 dir.create("photos_se" , showWarnings = FALSE)
 dir.create("plots"     , showWarnings = FALSE)
-dir.create("raw"       , showWarnings = FALSE)
+dir.create("raw_an"    , showWarnings = FALSE)
+dir.create("raw_se"    , showWarnings = FALSE)
 
 # parameters
 
