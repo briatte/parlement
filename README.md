@@ -64,7 +64,7 @@ The sponsors data has one row per sponsor-legislature. Both houses hold the same
 - `sex` -- gender (M/F), imputed from birth information ("Né/e")
 - `born` -- year of birth (stored as character)
 - `party` -- political party, abbreviated (see below)
-- `constituency` -- constituency
+- `constituency` -- constituency, stored as the string to its Wikipedia Francophone entry
 - `nyears` -- number of years in office before start of legislature
 - `lon` -- constituency longitude
 - `lat` -- constituency latitude
