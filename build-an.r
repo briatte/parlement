@@ -21,7 +21,7 @@ for(ii in unique(doc$legislature)) {
   # directed edge list
   #
   
-  edges = rbind_all(lapply(data$sponsors, function(d) {
+  edges = bind_rows(lapply(data$sponsors, function(d) {
     
     w = unlist(strsplit(d, ";"))
     
