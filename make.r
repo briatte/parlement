@@ -33,9 +33,11 @@ legs = c("1" = 1958, "2" = 1962, "3" = 1967, "4" = 1968, "5" = 1973,
 source("sponsors-an.r")
 source("dossiers-an.r")
 source("build-an.r")
+source("comm-an.r")
 
 source("sponsors-se.r")
 source("dossiers-se.r")
 source("build-se.r")
+source("comm-se.r")
 
 # have a nice day

@@ -385,7 +385,7 @@ if(!file.exists(data)) {
   print(table(dep$constituency[ is.na(dep$lon) ], exclude = NULL))
     
   j = c("legislature", "fullname", "name", "family_name", "sex", "born",
-        "party", "constituency", "nyears", "lon", "lat", "url", "photo")
+        "party", "constituency", "nyears", "lon", "lat", "url", "url_an", "photo")
   
   # save master sponsor dataset
   write.csv(dep[, j], data, row.names = FALSE)
