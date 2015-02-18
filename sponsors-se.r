@@ -54,9 +54,12 @@ if(!file.exists(sponsors)) {
         pre = rev(unlist(strsplit(nom, " ")))[1] # first name
         nom = paste(pre, ndf) # reordered full name
         
-        text = xpathSApply(html, "//ul[@class='list-type-03']/li", xmlValue)
+        text = c(xpathSApply(html, "//ul[@class='list-type-01']/li", xmlValue),
+                 xpathSApply(html, "//ul[@class='list-type-03']/li", xmlValue))
         
-        from = text [ grepl("Elu[e]? le|Sénat(eur|rice) le", text) ]
+        text = str_clean(text)
+        
+        from = text[ grepl("Elu[e]? le|Sénat(eur|rice) le", text) ]
         from = str_extract(from[1], "[0-9]{4}") # earliest start of mandate
         
         to = gsub("(\\D+) le (.*)", "\\2", text [ grepl("(Démission|Fin de mandat) le", text) ])
@@ -76,24 +79,54 @@ if(!file.exists(sponsors)) {
                      "", circo)
         circo = str_trim(gsub("\\s+", " ", circo))
         
-        if(ancien) {
-          
-          text = gsub("\\n", " ", text)
-          party = text [ grepl("(d|a)u\\s+(G|g)roupe", text) ]
-          
-        } else {
-          
-          party = xpathSApply(html, "//ul[@class='list-type-01']/li", xmlValue)
-          party = gsub("\\n", " ", party)
-          party = party[ grepl("(d|a)u\\s+(G|g)roupe", party) ]
-          
-        }
+        party = text[ grepl("(Membre du|Président(e)? (délégué(e)? )?du|au)\\s+(G|g)roupe\\s|aucun groupe", 
+                            text) ]
+        
+        # assign cross-legislature parliamentary groups
+        # source: groups from http://senat.fr/anciens-senateurs-5eme-republique/
+        party[ grepl("Rassemblement Démocratique et Européen", party) ] = "RDE"
+        party[ grepl("Rassemblement Démocratique et Social Européen", party) ] = "RDSE"
+        party[ grepl("Républicains et( des)? Indépendants", party) ] = "RI"
+        party[ grepl("Républicains Indépendants d'Action Sociale", party) ] = "RIAS"
+        party[ grepl("Union Centriste des Démocrates de Progrès", party) ] = "UCDP"
+        party[ grepl("Union Centriste et Républicaine", party) ] = "UCR"
+        party[ grepl("Union (C|c)entriste", party) ] = "UC-UDF"
+        party[ grepl("Union des Démocrates pour la République", party) ] = "UDR"
+        party[ grepl("Union des( )?Démocrates et Indépendants", party) ] = "UDI"
+        party[ grepl("Rassemblement pour la République", party) ] = "RPR"
+        party[ grepl("Centre Républicain d'Action Rurale et Sociale", party) ] = "CRARS"
+        party[ grepl("Union pour la Nouvelle République", party) ] = "UNR"
+        party[ grepl("Union pour un( )?Mouvement Populaire", party) ] = "UMP"
+        party[ grepl("Communiste", party) ] = "C"
+        party[ grepl("[C|c]ommuniste [R|r]épublicain et [C|c]itoyen", party) ] = "CRC"
+        party[ grepl("Centre National des Indépendants et Paysans", party) ] = "CNIP"
+        party[ grepl("Centre Démocratique", party) ] = "CD"
+        party[ grepl("Gauche Démocratique", party) ] = "GD"
+        party[ grepl("Républicain[s]? Populaire[s]?", party) ] = "MRP"
+        party[ grepl("écologiste", party) ] = "ECO"
+        party[ grepl("[S|s]ocialiste", party) ] = "SOC" # + apparentés
+        party[ grepl("Partide Gauche", party) ] = "PG" # hors liste
+        party[ grepl("aucun groupe", party) ] = "NI" # non inscrits
+        
+        # generic partparty group names
+        party[ party %in% c("C", "PG", "CRC") ] = "COM"
+        party[ party %in% c("GD", "RDE", "RDSE") ] = "RAD"
+        party[ party %in% c("UC-UDF", "UDI", "CD", "UCR", "UCDP", "CNIP", "CRARS", "RI", "RIAS") ] = "CEN"
+        party[ party %in% c("UNR", "UDR", "MRP", "UMP", "RPR") ] = "DRO"
+        party[ party == "NI" ] = "IND"
+        
+        party = unique(party[ nchar(party) == 3 ])
+        
+        # Henri de Raincourt: legislatures 7-14, CEN before 2002, DRO afterwards (fix below)
+        if(x == "/senateur/de_raincourt_henri86044g.html")
+          party = "DRO"
+        
+        stopifnot(length(party) == 1)
         
         s = rbind(s, data.frame(url = paste0(root, x), legislature = as.numeric(l),
                                 fullname = nom, family_name = ndf,
                                 born, sex, nyears, constituency = circo,
-                                party = ifelse(!length(party), NA, party),
-                                stringsAsFactors = FALSE))
+                                party = party, stringsAsFactors = FALSE))
         
       }
             
@@ -102,6 +135,9 @@ if(!file.exists(sponsors)) {
     sen = rbind(sen, s)
   
   }
+  
+  # Henri de Raincourt: legislatures 7-14, CEN before 2002, DRO afterwards (final fix)
+  sen$party[ grepl("de_raincourt_henri86044g", sen$url) & sen$legislature < 12 ] = "CEN"
   
   # years in office before start of legislature
   for(i in 1:nrow(sen)) {
@@ -151,45 +187,6 @@ if(!file.exists(sponsors)) {
     warning(paste(sum(u), "homonyms"))
     print(sen[ sen$name %in% d$name[ u ], ])
   }
-  
-  # assign cross-legislature parliamentary groups
-  # source: groups from http://senat.fr/anciens-senateurs-5eme-republique/
-  y = rep(NA, nrow(sen))
-  y[ grepl("Rassemblement Démocratique et Européen", sen$party) ] = "RDE"
-  y[ grepl("Rassemblement Démocratique et Social Européen", sen$party) ] = "RDSE"
-  y[ grepl("Républicains et( des)? Indépendants", sen$party) ] = "RI"
-  y[ grepl("Républicains Indépendants d'Action Sociale", sen$party) ] = "RIAS"
-  y[ grepl("Union Centriste des Démocrates de Progrès", sen$party) ] = "UCDP"
-  y[ grepl("Union Centriste et Républicaine", sen$party) ] = "UCR"
-  y[ grepl("Union (C|c)entriste", sen$party) ] = "UC-UDF"
-  y[ grepl("Union des Démocrates pour la République", sen$party) ] = "UDR"
-  y[ grepl("Union des( )?Démocrates et Indépendants", sen$party) ] = "UDI"
-  y[ grepl("Rassemblement pour la République", sen$party) ] = "RPR"
-  y[ grepl("Centre Républicain d'Action Rurale et Sociale", sen$party) ] = "CRARS"
-  y[ grepl("Union pour la Nouvelle République", sen$party) ] = "UNR"
-  y[ grepl("Union pour un( )?Mouvement Populaire", sen$party) ] = "UMP"
-  y[ grepl("Communiste", sen$party) ] = "C"
-  y[ grepl("[C|c]ommuniste [R|r]épublicain et [C|c]itoyen", sen$party) ] = "CRC"
-  y[ grepl("Centre National des Indépendants et Paysans", sen$party) ] = "CNIP"
-  y[ grepl("Centre Démocratique", sen$party) ] = "CD"
-  y[ grepl("Gauche Démocratique", sen$party) ] = "GD"
-  y[ grepl("Républicain[s]? Populaire[s]?", sen$party) ] = "MRP"
-  y[ grepl("écologiste", sen$party) ] = "ECO"
-  y[ grepl("[S|s]ocialiste", sen$party) ] = "SOC" # + apparentés
-  y[ grepl("Partide Gauche", sen$party) ] = "PG" # hors liste
-  y[ is.na(y) ] = "SE" # residuals
-  
-  stopifnot(all(!is.na(y)))
-  
-  # generic party group names
-  y[ y %in% c("C", "PG", "CRC") ] = "COM"
-  y[ y %in% c("GD", "RDE", "RDSE") ] = "RAD"
-  y[ y %in% c("UC-UDF", "UDI", "CD", "UCR", "UCDP", "CNIP", "CRARS", "RI", "RIAS") ] = "CEN"
-  y[ y %in% c("UNR", "UDR", "MRP", "UMP", "RPR") ] = "DRO"
-  y[ y %in% c("NI", "SE") ] = "IND"
-  
-  sen$party = y
-  table(sen$party, exclude = NULL)
   
   # clean up extra content in constituencies
   sen$constituency = gsub("\\(|\\)|&nbsp|puis| du | de la | des |Ancien sénateur|indéterminé", 
