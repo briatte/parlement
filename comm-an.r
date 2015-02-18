@@ -109,6 +109,7 @@ for(i in ls(pattern = "^net_fr_an1[1-4]")) {
   m = comm[ substr(comm$u, 1, 2) == gsub("\\D", "", i), names(sp) ]
   
   cat(" :", nrow(m), "committees", ncol(m), "MPs")
+  M = m
   
   m = t(as.matrix(m)) # sponsors in rows, committees in columns
   m = m %*% t(m) # adjacency matrix
@@ -140,6 +141,8 @@ for(i in ls(pattern = "^net_fr_an1[1-4]")) {
   
   n %e% "committee" = e$committee
   assign(i, n)
+  
+  nn %n% "committees" = as.table(rowSums(M))
   assign(paste0("co", i), nn)
   
 }
