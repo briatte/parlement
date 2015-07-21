@@ -1,7 +1,8 @@
 This repository contains code to build cosponsorship networks from bills passed in the [lower][an] and [upper][se] chambers of the French Parliament.
 
-- [interactive demo](http://briatte.org/parlement)
-- [static plots](http://briatte.org/parlement/plots.html)
+- [interactive demo](http://f.briatte.org/parlviz/parlement)
+- [static plots](http://f.briatte.org/parlviz/parlement/plots.html)
+- [more countries](https://github.com/briatte/parlnet)
 
 [an]: http://www.assemblee-nationale.fr/
 [se]: http://www.senat.fr/
