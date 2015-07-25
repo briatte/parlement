@@ -402,3 +402,20 @@ dep$constituency[ dep$constituency == "Côtes-du-Nord" ] = "Côtes-d'Armor" # sa
 dep$constituency[ dep$constituency == "Territoire-de-Belfort" ] = "Territoire de Belfort"
 dep$constituency[ dep$constituency == "Wallis-et-Futuna" ] = "Wallis et Futuna"
 dep$constituency = gsub("\\s", "_", dep$constituency)
+
+# add missing years of birth (from Sycomore or WP-FR)
+
+dep$born[ dep$name == "ANDRE ROUXEL" ] = 1946
+dep$born[ dep$name == "ANNIE GENEVARD" ] = 1956
+dep$born[ dep$name == "AUDREY MARIE" ] = 1947
+dep$born[ dep$name == "BENOIT ROY" ] = 1962
+dep$born[ dep$name == "CARLOS DA SILVA" ] = 1974
+dep$born[ dep$name == "EMMANUELLE AJON" ] = 1971
+dep$born[ dep$name == "JOELLE BOROWSKI" ] = 1961
+dep$born[ dep$name == "MARIE CLAUDE MARCHAND" ] = 1954
+dep$born[ dep$name == "PATRICE FRANCOIS" ] = 1953
+dep$born[ dep$name == "PIERRE RINGENBACH" ] = 1930
+dep$born[ dep$name == "RAYMOND LANCELIN" ] = 1944
+dep$born[ dep$name == "REMI CHAINTRON" ] = 1972
+dep$born[ dep$name == "VICTOR RINGEISEN" ] = 1930
+dep$born[ dep$name == "YVON ROBERT" ] = 1949
