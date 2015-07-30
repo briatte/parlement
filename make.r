@@ -35,6 +35,11 @@ source("dossiers-an.r")
 source("build-an.r")
 source("comm-an.r")
 
+# keep a zipped copy of the dosleg database
+if(!file.exists("data/dosleg.zip"))
+	download.file("http://data.senat.fr/data/dosleg/dosleg.zip",
+							  "data/dosleg.zip", mode = "wb", quiet = TRUE)
+
 source("sponsors-se.r")
 source("dossiers-se.r")
 source("build-se.r")
