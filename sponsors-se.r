@@ -2,7 +2,7 @@ sponsors = "data/sponsors-se.csv"
 
 if(!file.exists(sponsors)) {
   
-  sen = data.frame()
+  sen = data_frame()
   for(i in c("anciens-senateurs", "senateurs")) {
     
     root = "http://www.senat.fr"
@@ -20,7 +20,7 @@ if(!file.exists(sponsors)) {
     urls = unique(as.vector(xpathSApply(html, "//a[contains(@href,'/senateur/')]/@href")))
     
     cat("Parsing", length(urls), i, "\n")
-    s = data.frame()
+    s = data_frame()
     for(x in urls) {
       
       link = paste0(root, x)
@@ -45,15 +45,9 @@ if(!file.exists(sponsors)) {
         born = str_extract(civ, "[0-9]{4}")
         sex = ifelse(grepl("Née le", civ), "F", "M")
         
-        nom = gsub("(Anciens sénateurs Vème République : )|( - Sénat)", "", 
-                   sapply(xpathSApply(html, "//title"), xmlValue))
-        
-        nom = gsub("Jean Louis", "Jean-Louis", nom) # fix missing dash
-        ndf = unlist(strsplit(nom, " "))
-        ndf = paste0(ndf[ -length(ndf) ], collapse = " ") # family name
-        pre = rev(unlist(strsplit(nom, " ")))[1] # first name
-        nom = paste(pre, ndf) # reordered full name
-        
+        nom = gsub("(.*)M(lle|me|\\.) (.*),(.*)", "\\3",
+                   xpathSApply(html, "//meta[@name='Description']/@content"))
+
         text = c(xpathSApply(html, "//ul[@class='list-type-01']/li", xmlValue),
                  xpathSApply(html, "//ul[@class='list-type-03']/li", xmlValue))
         
@@ -96,7 +90,7 @@ if(!file.exists(sponsors)) {
         party[ grepl("Rassemblement pour la République", party) ] = "RPR"
         party[ grepl("Centre Républicain d'Action Rurale et Sociale", party) ] = "CRARS"
         party[ grepl("Union pour la Nouvelle République", party) ] = "UNR"
-        party[ grepl("Union pour un( )?Mouvement Populaire", party) ] = "UMP"
+        party[ grepl("Union pour un( )?Mouvement Populaire|Les Républicains", party) ] = "UMP"
         party[ grepl("Communiste", party) ] = "C"
         party[ grepl("[C|c]ommuniste [R|r]épublicain et [C|c]itoyen", party) ] = "CRC"
         party[ grepl("Centre National des Indépendants et Paysans", party) ] = "CNIP"
@@ -123,10 +117,14 @@ if(!file.exists(sponsors)) {
         
         stopifnot(length(party) == 1)
         
-        s = rbind(s, data.frame(url = paste0(root, x), legislature = as.numeric(l),
-                                fullname = nom, family_name = ndf,
-                                born, sex, nyears, constituency = circo,
-                                party = party, stringsAsFactors = FALSE))
+        s = rbind(s, data.frame(
+          url = paste0(root, x), legislature = as.numeric(l),
+          fullname = as.character(nom),
+          born, sex, nyears, constituency = circo,
+          party = party,
+          stringsAsFactors = FALSE))
+        
+        # cat(tail(s, 1)$fullname, "\n")
         
       }
             
@@ -171,10 +169,12 @@ if(!file.exists(sponsors)) {
   sen$legislature = as.numeric(sen$legislature)
   sen$url = gsub("http://www.senat.fr/senateur/|\\.html$", "", sen$url)
   
+  # picture is not a JPG portrait
+  sen$photo[ sen$url == "roger_coupin_maryse07002g" ] = 0
+  
   # clean names
   sen$name = clean_names(sen$fullname)
-  sen$family_name = clean_names(sen$family_name)
-  
+
   # fix homonym
   sen[ with(sen, grepl("JEAN BOYER", name) & constituency == "Isère"), "name"] = "JEAN BOYER ISERE"
   
@@ -195,8 +195,9 @@ if(!file.exists(sponsors)) {
   # geocode constituencies
   geo = "data/geocodes-se.csv"
   
-  if(!file.exists(geo))
-    write.csv(parse_geo(sen$constituency), geo, row.names = FALSE)
+  ## uncomment to geocode the constituencies (requires ggmap)
+  ## if(!file.exists(geo))
+  ##   write.csv(parse_geo(sen$constituency), geo, row.names = FALSE)
   
   sen = merge(sen, read.csv(geo, stringsAsFactors = FALSE),
                     by = "constituency", all.x = TRUE)
@@ -211,7 +212,7 @@ if(!file.exists(sponsors)) {
   sen$constituency[ sen$constituency == "Seine-Inférieure" ] = "Seine-Maritime"
   sen$constituency = gsub("\\s", "_", sen$constituency)
   
-  j = c("legislature", "fullname", "name", "family_name", "sex", "born",
+  j = c("legislature", "fullname", "name", "sex", "born",
         "party", "constituency", "nyears", "lon", "lat", "url", "photo")
 
   # save master sponsor dataset

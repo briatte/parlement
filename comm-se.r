@@ -2,7 +2,7 @@
 
 load("data/net_fr_se.rda")
 sponsors = dir("raw_se/senateur", pattern = "html$", full.names = TRUE)
-raw = data.frame()
+raw = data_frame()
 
 s = read.csv("data/sponsors-se.csv", stringsAsFactors = FALSE)
 
@@ -13,7 +13,7 @@ for(i in sponsors) {
   n = tolower(str_clean(gsub("(.*)(ommission)(.*)", "c\\2\\3", n)))
   
   if(length(n))
-    raw = rbind(raw, data.frame(i, n, stringsAsFactors = FALSE))
+    raw = rbind(raw, data_frame(i, n))
   
 }
 
@@ -24,7 +24,7 @@ raw$n = gsub("\\s\\(président\\)$|\\)$", "", raw$n)
 write.csv(summarise(group_by(raw, n), members = n()) %>% 
             arrange(n), "data/committees-se.csv", row.names = FALSE)
 
-comm = data.frame(u = unique(raw$n), stringsAsFactors = FALSE)
+comm = data_frame(u = unique(raw$n))
 
 # add sponsor columns
 for(i in sponsors)
@@ -59,9 +59,7 @@ for(i in ls(pattern = "^net_fr_se")) {
   colnames(m) = sp[ colnames(m) ]
   rownames(m) = sp[ rownames(m) ]
   
-  e = data.frame(i = n %e% "source",
-                 j = n %e% "target",
-                 stringsAsFactors = FALSE)
+  e = data_frame(i = n %e% "source", j = n %e% "target")
   e$committee = NA
   
   for(j in 1:nrow(e))

@@ -17,5 +17,4 @@ library(grid)
 
 # extras
 
-library(ggmap)
-library(RPostgreSQL)
+# library(ggmap) # to optionally geocode the constituencies

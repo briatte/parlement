@@ -1,9 +1,8 @@
-# set generic SQL settings
-sql = c(user = "opendata",
-        password = "",
-        host = "localhost",
-        port = 5432, drv = "PostgreSQL") # CREATE USER opendata;
-sql = as.list(c(dbname = "dosleg", sql)) # CREATE DATABASE dosleg;
+bills = c("auteur", "ecr", "texte")
+bills = paste0("data/dosleg-", bills, ".csv")
+if(any(!file.exists(bills)))
+  stop(paste0("This script relies on data exported from the Dosleg database.\n",
+              "Run psql.sh and see the README for detailed instructions."))
 
 file = "data/bi_se.rda"
 bills = "data/bills-se.csv"
@@ -13,16 +12,16 @@ if(!file.exists(bills)) {
   # URL match variable
   s$autmat = toupper(str_extract(s$url, "[0-9]+(.*)"))
   
-  # sponsor UID variable
-  sen = get_sql("select autcod, autfct, nomuse, prenom, autmat from auteur", sql)
+  # load sponsor UIDs
+  sen = read.csv("data/dosleg-auteur.csv", stringsAsFactors = FALSE)
   sen$nom = clean_names(paste(sen$prenom, sen$nomuse))
   
   # process problematic names
-  sen$nom[sen$nom == "LOUIS FERDINAND ROCCA SERRA" ] = "FERDINAND ROCCA SERRA LOUIS"
-  sen$nom[sen$nom == "BERNARD MICHEL HUGO" ] = "MICHEL HUGO BERNARD"
-  sen$nom[sen$nom == "SOSEFO MAKAPE PAPILIO" ] = "MAKAPE PAPILIO SOSEFO"
+  # sen$nom[ sen$nom == "LOUIS FERDINAND ROCCA SERRA" ] = "FERDINAND ROCCA SERRA LOUIS"
+  sen$nom[ sen$nom == "BERNARD MICHEL HUGO" ] = "BERNARD HUGO"
+  # sen$nom[ sen$nom == "SOSEFO MAKAPE PAPILIO" ] = "MAKAPE PAPILIO SOSEFO"
   
-  sen$autmat[sen$nom == "JACKY DARNE"] = "nnnn" # not a senator
+  sen$autmat[ sen$nom == "JACKY DARNE" ] = "nnn" # not a senator
   sen$autmat = toupper(sen$autmat)
   
   match = with(sen, nom %in% unique(s$name))
@@ -30,7 +29,7 @@ if(!file.exists(bills)) {
   
   missing = sen$nom[ !match & sen$autmat %in% unique(s$autmat) ]
   if(length(missing))
-    cat("Missing:", paste0(missing, collapse = ", "))
+    cat("Missing:", paste0(missing, collapse = ", "), "\n")
   
   sen = sen[ !group & match, ]
   
@@ -55,21 +54,21 @@ if(!file.exists(bills)) {
     
   }
   
-  s = get_sql("select texcod, autcod, ecrnumtri from ecr where typedoc = 'T'", sql)
-  
-  s = merge(s[, c("texcod", "autcod", "ecrnumtri") ],
-            unique(sp[, c("autcod", "autfct", "name", "party", "url") ]),
+  # load cross-table identifiers
+  s = read.csv("data/dosleg-ecr.csv")
+  s = merge(s, unique(sp[, c("autcod", "autfct", "name", "party", "url") ]),
             by = "autcod", all.x = TRUE)
+  
   sp$autcod = NULL        
   
   nul = is.na(s$name) | is.na(s$autcod)
-  if(sum(nul)) {
+  if (sum(nul)) {
     
     # unrecognized authors
     dnk = grepl("s(é|e)nateur", s$autfct[ nul ], ignore.case = TRUE)
     
     # warning if author status is senator
-    if(any(dnk))
+    if (any(dnk))
       cat("Dropping:", sum(dnk), "unmatched senator(s)\n")
     
     cat("Dropping:", n_distinct(s$autcod[ nul ][ !dnk ]), "unmatched sponsor(s)\n")
@@ -99,9 +98,8 @@ if(!file.exists(bills)) {
   names(s)[ names(s) == "texcod" ] = "uid"
   names(s)[ names(s) == "url" ] = "sponsors"
   
-  # select Senator bills
-  b = get_sql("select texcod, sesann, txtoritxtdat, texnum, texurl from texte where sesann > 1985 and typtxtcod = '1'", sql)
-  
+  # load Senator bills
+  b = read.csv("data/dosleg-texte.csv")
   b = subset(b, texcod %in% unique(s$uid))
   
   cat("Parsing:", n_distinct(b$texcod), "bills")

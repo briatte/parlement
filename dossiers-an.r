@@ -3,8 +3,7 @@ bills = "data/bills-an.csv"
 
 if(!file.exists(bills)) {
   
-  update = FALSE # set to FALSE to skip missing files
-  doc = data.frame()
+  doc = data_frame()
 
   for(x in sessions) {
     
@@ -20,10 +19,7 @@ if(!file.exists(bills)) {
     h = htmlParse(file, encoding = "UTF-8")
     h = xpathSApply(h, "//a[contains(@href, '/dossiers/')]/@href")
     
-    data = data.frame(legislature = x,
-                      url = gsub("(.asp)(.*)", "\\1", h),
-                      stringsAsFactors = FALSE)
-    
+    data = data_frame(legislature = x, url = gsub("(.asp)(.*)", "\\1", h))
     data = unique(data)
     
     # all bills come from the right legislature
@@ -45,10 +41,10 @@ if(!file.exists(bills)) {
                     gsub("/(\\d+)/(.*)", "\\1", i), "-", # session
                     gsub(".asp", ".html", str_extract(i, "(\\w|-)+.asp")))
       
-      if(!file.exists(file) & update)
+      if(!file.exists(file))
         try(download.file(paste0(root, i), file, mode = "wb", quiet = TRUE), silent = TRUE)
       
-      if(update && !file.info(file)$size) {
+      if(!file.info(file)$size) {
         
         cat(sprintf("%4.0f", which(data$url == i)), ": no bill at", paste0(root, i), "\n")
         file.remove(file)
@@ -64,6 +60,13 @@ if(!file.exists(bills)) {
         au = xpathSApply(h, "//div[contains(@align, 'left')][2]/a[contains(@href, 'tribun') or contains(@href, 'senateur') or contains(@href, 'senfic')]", xmlValue)
         au_url = xpathSApply(h, "//div[contains(@align, 'left')][2]/a[contains(@href, 'tribun') or contains(@href, 'senateur') or contains(@href, 'senfic')]/@href")
         
+        if(!length(r) | !length(au)) {
+          
+          cat(file, ": no sponsor information\n")
+          next
+          
+        }
+        
         au = gsub("(\\(|\\))", "\\\\\\1", au) # protect brackets in regex
         aa = unlist(str_extract_all(r, paste0(au, collapse = "|"))) # select sponsors
         au_url = au_url[ au %in% aa ]
@@ -78,11 +81,11 @@ if(!file.exists(bills)) {
           co = gsub("javascript:ouvre_popup\\('(.*)'\\)", "-\\1", co)
           file = gsub("\\.html", co, file)
           
-          if(!file.exists(file) & update)
+          if(!file.exists(file))
             try(download.file(paste0(root, gsub("/(\\d+)/(.*)", "/\\1/", i), gsub("-", "dossiers/", co)),
                               file, mode = "wb", quiet = TRUE), silent = TRUE)
           
-          if(update && !file.info(file)$size) {
+          if(!file.info(file)$size) {
             
             cat(sprintf("%4.0f", which(data$url == i)), ": no cosponsor(s) at", paste0(root, i), "\n")        
             file.remove(file)
@@ -94,13 +97,11 @@ if(!file.exists(bills)) {
             co = xpathSApply(h, "//a", xmlValue)
             co_url = xpathSApply(h, "//a/@href")
             
-            co_url = co_url[ !grepl("membres", co) ]
-            co = co[ !grepl("membres", co) ]
-            
             stopifnot(length(co) == length(co_url))
+            sig = !grepl("membres", co) & grepl("tribun|senat", co_url)
             
-            data$co[ data$url == i ] = paste0(co, collapse = ";")
-            data$co_url[ data$url == i ] = paste0(co_url, collapse = ";")
+            data$co[ data$url == i ] = paste0(co[ sig ], collapse = ";")
+            data$co_url[ data$url == i ] = paste0(co_url[ sig ], collapse = ";")
             
           }
           
@@ -116,20 +117,20 @@ if(!file.exists(bills)) {
   
   # subset bills
   
-  doc = subset(doc, !is.na(title)) # lose 326 bills with no sponsor listings
+  doc = subset(doc, !is.na(title)) # lose 328 bills with no sponsor listings
   doc = subset(doc, grepl("Proposition de loi", title)) # lose one gov. bill
   
-  doc = subset(doc, !is.na(au)) # lose 0 bill
+  doc = subset(doc, !is.na(au)) # lose 3 bills
   doc = subset(doc, au != "") # lose 33 empty
   
   write.csv(doc, bills, row.names = FALSE)
   
   # diagnose missing sponsors
   
-  a = data.frame(name = unlist(strsplit(doc$au, ";")),
-                 url = unlist(strsplit(doc$au_url, ";")), stringsAsFactors = FALSE)
-  a = rbind(a, data.frame(name = unlist(strsplit(doc$co, ";")),
-                          url = unlist(strsplit(doc$co_url, ";")), stringsAsFactors = FALSE))
+  a = data_frame(name = unlist(strsplit(doc$au, ";")),
+                 url = unlist(strsplit(doc$au_url, ";")))
+  a = rbind(a, data_frame(name = unlist(strsplit(doc$co, ";")),
+                          url = unlist(strsplit(doc$co_url, ";"))))
   a = subset(a, !is.na(name))
   a$name = gsub("(M\\.|Mme)\\s", "", a$name)
   a$name = gsub("(.*)\\((.*)", "\\1", a$name)

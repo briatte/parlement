@@ -10,7 +10,7 @@ if(!file.exists(data)) {
     file = paste0("raw_an/mps-", x, ".html")
     
     if(!file.exists(file))
-      try(download(paste0(root, "result.asp?radio_dept=tous_departements&regle_nom=contient&Nom=&departement=&choixdate=intervalle&D%C3%A9butMin=&FinMin=&Dateau=&legislature=", x, "&choixordre=chrono&Rechercher=Lancer+la+recherche"),
+      try(download.file(paste0(root, "result.asp?radio_dept=tous_departements&regle_nom=contient&Nom=&departement=&choixdate=intervalle&D%C3%A9butMin=&FinMin=&Dateau=&legislature=", x + 47, "&choixordre=chrono&Rechercher=Lancer+la+recherche"),
                    file, mode = "wb", quiet = TRUE), silent = TRUE)
     
     s = htmlParse(file, encoding = "UTF-8")
@@ -25,7 +25,7 @@ if(!file.exists(data)) {
   cat("Parsing", length(sycomore), "MPs\n")
   
   # MP-level details
-  dep = data.frame()
+  dep = data_frame()
   for(i in rev(sycomore)) {
     
     file = paste0("raw_an/mps/", gsub("\\D", "", i), ".html")
@@ -83,74 +83,64 @@ if(!file.exists(data)) {
       url_an = as.vector(gsub("window.location=|'", "", url_an))
       url_an = ifelse(!length(url_an), NA, paste0("http://www.assemblee-nationale.fr", url_an))
       
-      dep = rbind(dep, data.frame(url = gsub("\\D", "", i), name,
-                                  sex, born, born_loc,
-                                  mandate, constituency, party, url_an,
-                                  stringsAsFactors = FALSE))
+      photo = xpathSApply(html, "//img[@class='deputy-profile-picture']/@src")
+      
+      dep = rbind(dep, data_frame(
+        url = gsub("\\D", "", i), name,
+        sex, born, born_loc,
+        mandate, constituency, party, url_an,
+        photo = ifelse(!length(photo), NA, photo)
+      ))
       
     }
     
   }
   
-  cat("Parsing", n_distinct(dep$url), "photos\n")
+  cat("Getting", n_distinct(na.omit(dep$photo)), "photos\n")
   
-  # download photos
-  dep$photo = 0
-  
-  for(i in unique(dep$url)) {
+  for(i in unique(na.omit(dep$photo))) {
     
-    photo = paste0("photos_an/", i, ".jpg")
+    photo = paste0("photos_an/", gsub("\\D", "", i), ".jpg")
     
     if(!file.exists(photo))
-      try(download.file(paste0("http://www.assemblee-nationale.fr/sycomore/biographies/photo/jpg/", i, ".jpg"),
-                        photo, mode = "wb", quiet = TRUE), silent = TRUE)
+      download.file(paste0("http://www.assemblee-nationale.fr", str_trim(i)),
+                    photo, mode = "wb", quiet = TRUE)
     
-    if(!file.info(photo)$size)
+    if(!file.info(photo)$size) {
+      
       file.remove(photo)
-    
-    if(file.exists(photo))
-      dep$photo[ dep$url == i ] = 1
+      dep$photo[ dep$photo == i ] = 0
+      
+    } else {
+      
+      dep$photo[ dep$photo == i ] = 1
+      
+    }
     
   }
+  
+  dep$photo[ is.na(dep$photo) ] = 0
+  dep$photo = as.integer(dep$photo)
   
   # save original name
   dep$fullname = dep$name
   
-  # extract family name
-  dep$family_name = sapply(dep$name, function(x) {
-    paste0(unlist(str_extract_all(x, "[A-ZÉÀÙÊÎÔÈÙ]{2,}")), collapse = " ")
-  })
-  
   # simplify
   dep$name = str_trim(clean_names(dep$name))
-  dep$family_name = str_trim(clean_names(dep$family_name))
-  
-  # fix cedilla encoding issues
-  dep$family_name[ dep$name == "MICHEL FRANCAIX" ] = "FRANCAIX" 
-  dep$family_name[ dep$name == "PHILIPPE BOENNEC" ] = "BOENNEC" 
-  
+
   # fix family names
+  dep$name[ dep$name == "JEAN GARRAUD" ] = "JEAN PAUL GARRAUD"
   dep$name[ dep$name == "ODETTE EUGENIE GERMAINE DURIEZ NEE GAMELIN" ] = "ODETTE DURIEZ"
-  dep$family_name[ dep$name == "ODETTE DURIEZ" ] = "DURIEZ"
   dep$name[ dep$name == "CHRISTIANE TAUBIRA DELANNON" ] = "CHRISTIANE TAUBIRA"
-  dep$family_name[ dep$name == "CHRISTIANE TAUBIRA" ] = "TAUBIRA"
   dep$name[ dep$name == "MARTINE AURILLAC NEE ADRIAN" ] = "MARTINE AURILLAC"
-  dep$family_name[ dep$name == "MARTINE AURILLAC" ] = "AURILLAC"
   dep$name[ dep$name == "FRANCOISE BRANGET NEE MINELLO" ] = "FRANCOISE BRANGET"
-  dep$family_name[ dep$name == "FRANCOISE BRANGET" ] = "BRANGET"
   dep$name[ dep$name == "FRANCOISE VALLET NEE JOUANNE" ] = "FRANCOISE VALLET"
-  dep$family_name[ dep$name == "FRANCOISE VALLET" ] = "VALLET"
   dep$name[ dep$name == "BERNADETTE PAIX NEE ABRIBAT" ] = "BERNADETTE PAIX"
-  dep$family_name[ dep$name == "BERNADETTE PAIX" ] = "PAIX"
   dep$name[ dep$name == "MARCELLE MAURICETTE RAMONET NEE CHITRE" ] = "MARCELLE RAMONET"
-  dep$family_name[ dep$name == "MARCELLE RAMONET" ] = "RAMONET"
   dep$name[ dep$name == "COLETTE MARIE FRANCOISE MOAL NEE AMICEL" ] = "COLETTE MOAL"
-  dep$family_name[ dep$name == "COLETTE MOAL" ] = "MOAL"
   dep$name[ dep$name == "PAULETTE GUINCHARD KUNTZLER" ] = "PAULETTE GUINCHARD"
-  dep$family_name[ dep$name == "PAULETTE GUINCHARD" ] = "GUINCHARD"
   dep$name[ dep$name == "JOSIANE BOYCE NEE PONTIEUX" ] = "JOSIANE BOYCE"
-  dep$family_name[ dep$name == "JOSIANE BOYCE" ] = "BOYCE"
-  
+
   # fix first names
   dep$name[ dep$name == "JACQUES MICHEL PIERRE CHABAN DELMAS" ] = "JACQUES CHABAN DELMAS"
   dep$name[ dep$name == "CHARLES PINETON CHAMBRUN" ] = "CHARLES CHAMBRUN"
@@ -215,7 +205,7 @@ if(!file.exists(data)) {
   dep = subset(dep, !is.na(party))
   
   # add them back
-  dep = rbind(dep, data.frame(
+  dep = rbind(dep, data_frame(
     url = c("18563", "10617"),
     name = c("MEYER HABIB", "EDOUARD FRITCH"),
     sex = c("M", "M"),
@@ -227,7 +217,6 @@ if(!file.exists(data)) {
     url_an = c("http://www.assemblee-nationale.fr/14/tribun/fiches_id/695100.asp", NA),
     photo = c(0, 1),
     fullname = c("Meyer HABIB", "Édouard FRITCH"),
-    family_name = c("HABIB", "FRITCH"),
     legislature = c(14, 14)
   ))
 
@@ -376,15 +365,16 @@ if(!file.exists(data)) {
   # geocode constituencies
   geo = "data/geocodes-an.csv"
   
-  if(!file.exists(geo))
-    write.csv(parse_geo(dep$constituency), geo, row.names = FALSE)
+  ## uncomment to geocode the constituencies (requires ggmap)
+  ## if(!file.exists(geo))
+  ##   write.csv(parse_geo(dep$constituency), geo, row.names = FALSE)
     
   dep = merge(dep, read.csv(geo, stringsAsFactors = FALSE),
                   by = "constituency", all.x = TRUE)
   
   print(table(dep$constituency[ is.na(dep$lon) ], exclude = NULL))
     
-  j = c("legislature", "fullname", "name", "family_name", "sex", "born",
+  j = c("legislature", "fullname", "name", "sex", "born",
         "party", "constituency", "nyears", "lon", "lat", "url", "url_an", "photo")
   
   # save master sponsor dataset

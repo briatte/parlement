@@ -43,7 +43,8 @@ clean_names <- function(x) {
 
 #' Get French constituency geocodes
 #'
-#' Discards ex-colonies, overseas and parser bugs.
+#' Discards ex-colonies, overseas and parser bugs. The function is not run; the
+#' geocodes are directly provided in the repository instead.
 parse_geo <- function(x) {
   
   # drop locations outside of metropolitan France

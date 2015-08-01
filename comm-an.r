@@ -2,7 +2,7 @@
 
 load("data/net_fr_an.rda")
 sponsors = dir("raw_an/mps")
-raw = data.frame()
+raw = data_frame()
 
 s = read.csv("data/sponsors-an.csv", stringsAsFactors = FALSE)
 
@@ -18,8 +18,12 @@ for(i in l[ grepl("Commission", n) ]) {
   h = htmlParse(paste0("http://www.assemblee-nationale.fr", i), encoding = "UTF-8")
   a = xpathSApply(h, "//div[@id='organe']//a[contains(@href, 'tribun/fiches')]/@href")
   a = paste0("http://www.assemblee-nationale.fr", a)
-  raw = rbind(raw, data.frame(y = 14, i = unique(s$url[ s$url_an %in% a ]),
-                              n = n[ l == i ], l = i, stringsAsFactors = FALSE))
+  raw = rbind(raw, data.frame(
+    y = 14,
+    i = unique(s$url[ s$url_an %in% a ]),
+    n = n[ which(l == i) ],
+    l = i,
+    stringsAsFactors = FALSE))
   
 }
 
@@ -35,8 +39,12 @@ for(i in l) {
   h = htmlParse(paste0("http://www.assemblee-nationale.fr", i), encoding = "UTF-8")
   a = xpathSApply(h, "//div[@id='organe']//a[contains(@href, 'tribun/fiches')]/@href")
   a = paste0("http://www.assemblee-nationale.fr", a)
-  raw = rbind(raw, data.frame(y = 13, i = unique(s$url[ s$url_an %in% a ]),
-                              n = n[ l == i ], l = i, stringsAsFactors = FALSE))
+  raw = rbind(raw, data.frame(
+    y = 13,
+    i = unique(s$url[ s$url_an %in% a ]),
+    n = n[ which(l == i) ],
+    l = i,
+    stringsAsFactors = FALSE))
   
 }
 
@@ -52,8 +60,12 @@ for(i in l) {
   h = htmlParse(paste0("http://www.assemblee-nationale.fr/12/tribun/", i), encoding = "UTF-8")
   a = xpathSApply(h, "//table[@width='90%']//a[contains(@href, 'fiches_id')]/@href")
   a = gsub("../fiches_id", "http://www.assemblee-nationale.fr/12/tribun", a)
-  raw = rbind(raw, data.frame(y = 12, i = unique(s$url[ s$url_an %in% a ]),
-                              n = n[ l == i ], l = i, stringsAsFactors = FALSE))
+  raw = rbind(raw, data.frame(
+    y = 12,
+    i = unique(s$url[ s$url_an %in% a ]),
+    n = n[ l == i ],
+    l = i,
+    stringsAsFactors = FALSE))
   
 }
 
@@ -69,8 +81,12 @@ for(i in l) {
   h = htmlParse(paste0("http://www.assemblee-nationale.fr/11/tribun/", i), encoding = "UTF-8")
   a = xpathSApply(h, "//a[contains(@href, 'fiches_id')]/@href")
   a = paste0("http://www.assemblee-nationale.fr/11/tribun/", a)
-  raw = rbind(raw, data.frame(y = 11, i = unique(s$url[ s$url_an %in% a ]),
-                              n = n[ l == i ], l = i, stringsAsFactors = FALSE))
+  raw = rbind(raw, data.frame(
+    y = 11,
+    i = unique(s$url[ s$url_an %in% a ]),
+    n = n[ l == i ],
+    l = i,
+    stringsAsFactors = FALSE))
   
 }
 
@@ -84,7 +100,7 @@ write.csv(summarise(group_by(raw[, c(1, 3) ], y, n), members = n()) %>%
 # unique legislature-committee pairings
 raw$u = paste(raw$y, raw$n)
 
-comm = data.frame(u = unique(raw$u), stringsAsFactors = FALSE)
+comm = data_frame(u = unique(raw$u))
 
 # add sponsor columns
 for(i in sponsors)
@@ -119,9 +135,7 @@ for(i in ls(pattern = "^net_fr_an1[1-4]")) {
   colnames(m) = sp[ colnames(m) ]
   rownames(m) = sp[ rownames(m) ]
   
-  e = data.frame(i = n %e% "source",
-                 j = n %e% "target",
-                 stringsAsFactors = FALSE)
+  e = data_frame(i = n %e% "source", j = n %e% "target")
   e$committee = NA
   
   for(j in 1:nrow(e))
