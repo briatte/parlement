@@ -73,7 +73,7 @@ The sponsors data has one row per sponsor-legislature. Both houses hold the same
 - `url` -- sponsor URL, shortened to unique identifier
 - `photo` -- numeric dummy coding for the presence of a photo
 
-The constituency coordinates are provided as CSV files in the `data` folder of the repository, and can be rebuilt by calling the `geocode` function of the `ggmap` package after uncommenting a few lines in the code.
+The constituency coordinates are provided as CSV files in the `data` folder of the repository. They can be rebuilt from scratch by uncommenting a few lines of code in the `sponsors*.r` scripts, which require the [`ggmap`](https://github.com/dkahle/ggmap) package by [David Kahle](https://github.com/dkahle) and [Hadley Wickham](https://github.com/hadley).
 
 ## Parties
 
