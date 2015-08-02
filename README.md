@@ -13,17 +13,15 @@ The code is a simplified version of the [`neta`](https://github.com/briatte/neta
 
 Replicate by running `psql.sh` to export some tables from PostgreSQL for the French Senate, and then by running `make.r` in R. __You will need a PostgreSQL installation to run the scripts:__ see below for further instructions.
 
-The `sponsors-an.r` and `dossiers-an.r` scripts deal with the lower house; it will scrape all sponsors for legislatures 8-14 and all dossiers for the same legislatures. Legislature 10 is then excluded from the network building routine in `build-an.r`, as cosponsors are not reported for bills registered with the National Assembly during that period.
+The `sponsors-an.r` and `dossiers-an.r` scripts deal with the lower house; it will scrape all sponsors for legislatures 8-14 and all dossiers for the same legislatures. Legislature 10 is then excluded from the network building routine in `build-an.r`, as cosponsors are not reported for bills registered with the National Assembly during that period. The [open data portal](http://data.assemblee-nationale.fr) of the National Assembly does not currently provide [legislative files](http://data.assemblee-nationale.fr/travaux-parlementaires/dossiers-legislatifs) for legislatures prior to the current one. 
 
-The `sponsors-se.r`, `dossiers-se.r` and `build-se.r` scripts carry the same operations as above for the upper house, for the same time period. Because Senate bills come from a PostgreSQL dump downloaded from its [open data portal][ds], the code expects to find three CSV files exported from the [Dosleg][dosleg] database in the `data` folder.
-
-After installing [PostgreSQL](http://www.postgresql.org/), just run the [`psql.sh`](psql.sh) shell script to download the Dosleg database, import it into PostgreSQL and export the relevant data:
+The `sponsors-se.r`, `dossiers-se.r` and `build-se.r` scripts carry the same operations as above for the upper house, for the same time period. Because Senate bills come from a PostgreSQL dump downloaded from its [open data portal][ds], the code expects to find three CSV files exported from the [Dosleg][dosleg] database in the `data` folder. After installing [PostgreSQL](http://www.postgresql.org/), just run the [`psql.sh`](psql.sh) shell script to download the Dosleg database, import it into PostgreSQL and export the relevant data:
 
 ```sh
 sh psql.sh
 ```
 
-The script will clean up by removing the Dosleg database from your PostgreSQL installation, but it will keep a zipped copy of the original dump in the `data` folder.
+The script will clean up by removing the Dosleg database from PostgreSQL, but it will keep a zipped copy of the original dump in the `data` folder.
 
 [ds]: http://data.senat.fr/
 [dosleg]: http://data.senat.fr/dosleg/
