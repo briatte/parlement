@@ -1,15 +1,15 @@
 data = "data/sponsors-an.csv"
 
-if(!file.exists(data)) {
+if (!file.exists(data)) {
   
   root = "http://www.assemblee-nationale.fr/sycomore/"
   
   sycomore = c()
-  for(x in sessions) { # accepts 1:14
+  for (x in sessions) { # accepts 1:14
     
     file = paste0("raw_an/mps-", x, ".html")
     
-    if(!file.exists(file))
+    if (!file.exists(file))
       try(download.file(paste0(root, "result.asp?radio_dept=tous_departements&regle_nom=contient&Nom=&departement=&choixdate=intervalle&D%C3%A9butMin=&FinMin=&Dateau=&legislature=", x + 47, "&choixordre=chrono&Rechercher=Lancer+la+recherche"),
                    file, mode = "wb", quiet = TRUE), silent = TRUE)
     
@@ -26,16 +26,16 @@ if(!file.exists(data)) {
   
   # MP-level details
   dep = data_frame()
-  for(i in rev(sycomore)) {
+  for (i in rev(sycomore)) {
     
     file = paste0("raw_an/mps/", gsub("\\D", "", i), ".html")
     
-    if(!file.exists(file))
+    if (!file.exists(file))
       download.file(i, file, mode = "wb", quiet = TRUE)
     
     html = try(htmlParse(file, encoding = "UTF-8"), silent = TRUE)
     
-    if("try-error" %in% class(html)) {
+    if ("try-error" %in% class(html)) {
       
       cat("Parser error:", i, "\n")
       
@@ -59,7 +59,7 @@ if(!file.exists(data)) {
                            xmlValue)
       mandate = mandate[ !grepl("Présidence", mandate) ]
       
-      if(!length(mandate)) {
+      if (!length(mandate)) {
         constituency = party = NA
       } else {
         constituency = str_trim(gsub("(.*) : (.*) - (.*)", "\\2", mandate))
@@ -70,10 +70,10 @@ if(!file.exists(data)) {
       mandate = xpathSApply(html, "//div[@id='assemblee']/*/ul/li/div[@class='article-content']/p/b", xmlValue)
       mandate = str_trim(mandate[ !grepl("Présidence", mandate) ])
       
-      if(!length(mandate))
+      if (!length(mandate))
         mandate = NA
       
-      if(identical(c(mandate, party), c(NA, NA)))
+      if (identical(c(mandate, party), c(NA, NA)))
         cat(sprintf("%4.0f", which(sycomore == i)), "[ no details at", i, "]\n")
       # else
       # cat(sprintf("%4.0f", which(sycomore == i)), nom_de_famille, "\n")
@@ -98,29 +98,26 @@ if(!file.exists(data)) {
   
   cat("Getting", n_distinct(na.omit(dep$photo)), "photos\n")
   
-  for(i in unique(na.omit(dep$photo))) {
+  for (i in unique(na.omit(dep$photo))) {
     
     photo = paste0("photos_an/", gsub("\\D", "", i), ".jpg")
     
-    if(!file.exists(photo))
+    if (!file.exists(photo))
       download.file(paste0("http://www.assemblee-nationale.fr", str_trim(i)),
                     photo, mode = "wb", quiet = TRUE)
     
-    if(!file.info(photo)$size) {
+    if (!file.info(photo)$size) {
       
       file.remove(photo)
-      dep$photo[ dep$photo == i ] = 0
+      dep$photo[ dep$photo == i ] = NA
       
     } else {
       
-      dep$photo[ dep$photo == i ] = 1
+      dep$photo[ dep$photo == i ] = photo
       
     }
     
   }
-  
-  dep$photo[ is.na(dep$photo) ] = 0
-  dep$photo = as.integer(dep$photo)
   
   # save original name
   dep$fullname = dep$name
@@ -184,7 +181,7 @@ if(!file.exists(data)) {
   # detect homonyms
   d = summarise(group_by(dep, name), n = n_distinct(url))
   u = d$n > 1
-  if(sum(u)) {
+  if (sum(u)) {
     cat(sum(u), "homonyms detected:\n")
     print(dep[ dep$name %in% d$name[ u ], ])
     stop()
@@ -215,7 +212,7 @@ if(!file.exists(data)) {
     constituency = c("Français établis hors de France", "Polynésie française"),
     party = c("Union des démocrates et indépendants", "Union des démocrates et indépendants"),
     url_an = c("http://www.assemblee-nationale.fr/14/tribun/fiches_id/695100.asp", NA),
-    photo = c(0, 1),
+    photo = c(NA, "photos_an/10617.jpg"),
     fullname = c("Meyer HABIB", "Édouard FRITCH"),
     legislature = c(14, 14)
   ))
@@ -223,20 +220,20 @@ if(!file.exists(data)) {
   # mandate years
   dep$nyears = sapply(dep$mandate[ !is.na(dep$mandate) ], function(x) {
     x = as.numeric(unlist(str_extract_all(x, "[0-9]{4}")))
-    if(length(x) == 1)
+    if (length(x) == 1)
       x = c(x, 2014)
     paste0(seq(min(x), max(x)), collapse = ";")
   })
     
   # mandate years, generalised to all legislatures
-  for(i in unique(dep$url)) {
+  for (i in unique(dep$url)) {
     x = dep$nyears[ dep$url == i ]
     x = as.numeric(unlist(str_split(x, ";")))
     dep$nyears[ dep$url == i ] = paste0(sort(x), collapse = ";")
   }
   
   # years in office before start of legislature
-  for(i in 1:nrow(dep)) {
+  for (i in 1:nrow(dep)) {
     x = dep$nyears[ i ]
     x = as.numeric(unlist(strsplit(x, ";")))
     dep$nyears[ i ] = sum(x < legs[ as.character(dep$legislature[ i ]) ])
@@ -355,43 +352,49 @@ if(!file.exists(data)) {
   
   # add as sponsor variable
   dep$party = ifelse(y == "SE", "IND", y)
-    
+  
+  # ============================================================================
+  # CHECK CONSTITUENCIES
+  # ============================================================================
+  
   # clean up extra content in constituencies
   dep$constituency = gsub("(.*) : (.*)", "\\2", dep$constituency)
   dep$constituency = gsub("(.*) - (Fédération|Union|Rassemblement|Républicains|Socialiste)(.*)", "\\1",
                            dep$constituency)
   dep$constituency = str_trim(dep$constituency)
+
+  # constituencies
+  dep$constituency[ dep$constituency == "Seine-St-Denis" ] = "Seine-Saint-Denis"
+  dep$constituency[ dep$constituency == "Basses-Alpes" ] = "Alpes-de-Haute-Provence"
+  dep$constituency[ dep$constituency == "Côtes d'Armor" ] = "Côtes-d'Armor"
+  dep$constituency[ dep$constituency == "Côtes-du-Nord" ] = "Côtes-d'Armor" # same as above
+  dep$constituency[ dep$constituency == "Territoire-de-Belfort" ] = "Territoire de Belfort"
+  dep$constituency = gsub("\\s", "_", dep$constituency)
   
-  # geocode constituencies
-  geo = "data/geocodes-an.csv"
-  
-  ## uncomment to geocode the constituencies (requires ggmap)
-  ## if(!file.exists(geo))
-  ##   write.csv(parse_geo(dep$constituency), geo, row.names = FALSE)
+  cat("Checking constituencies,", sum(is.na(dep$constituency)), "missing...\n")
+  for (i in na.omit(unique(dep$constituency))) {
     
-  dep = merge(dep, read.csv(geo, stringsAsFactors = FALSE),
-                  by = "constituency", all.x = TRUE)
-  
-  print(table(dep$constituency[ is.na(dep$lon) ], exclude = NULL))
+    g = GET(paste0("https://", meta[ "lang"], ".wikipedia.org/wiki/", i))
     
-  j = c("legislature", "fullname", "name", "sex", "born",
-        "party", "constituency", "nyears", "lon", "lat", "url", "url_an", "photo")
+    if (status_code(g) != 200)
+      cat("Missing Wikipedia entry:", i, "\n")
+    
+    g = xpathSApply(htmlParse(g), "//title", xmlValue)
+    g = gsub("(.*) — Wikipédia(.*)", "\\1", g)
+    
+    if (gsub("\\s", "_", g) != i)
+      cat("Discrepancy:", g, "(WP) !=", i ,"(data)\n")
+    
+  }
   
   # save master sponsor dataset
-  write.csv(dep[, j], data, row.names = FALSE)
+  write.csv(select(dep, legislature, fullname, name, sex, born, party,
+                   constituency, nyears, url, url_an, photo), data,
+            row.names = FALSE)
 
 }
 
 dep = read.csv(data, stringsAsFactors = FALSE)
-
-# constituencies
-dep$constituency[ dep$constituency == "Seine-St-Denis" ] = "Seine-Saint-Denis"
-dep$constituency[ dep$constituency == "Basses-Alpes" ] = "Alpes-de-Haute-Provence"
-dep$constituency[ dep$constituency == "Côtes d'Armor" ] = "Côtes-d'Armor"
-dep$constituency[ dep$constituency == "Côtes-du-Nord" ] = "Côtes-d'Armor" # same as above
-dep$constituency[ dep$constituency == "Territoire-de-Belfort" ] = "Territoire de Belfort"
-dep$constituency[ dep$constituency == "Wallis-et-Futuna" ] = "Wallis et Futuna"
-dep$constituency = gsub("\\s", "_", dep$constituency)
 
 # add missing years of birth (from Sycomore or WP-FR)
 
@@ -409,3 +412,33 @@ dep$born[ dep$name == "RAYMOND LANCELIN" ] = 1944
 dep$born[ dep$name == "REMI CHAINTRON" ] = 1972
 dep$born[ dep$name == "VICTOR RINGEISEN" ] = 1930
 dep$born[ dep$name == "YVON ROBERT" ] = 1949
+dep$born = as.integer(dep$born)
+
+dep$sex[ dep$name == "VICTOR RINGEISEN" ] = "M"
+dep$sex[ dep$name == "BENOIT ROY" ] = "M"
+dep$sex[ dep$name == "PIERRE RINGENBACH" ] = "M"
+
+dep$url = paste0("http://www.assemblee-nationale.fr/sycomore/fiche.asp?num_dept=", dep$url)
+
+# ==============================================================================
+# QUALITY CONTROL
+# ==============================================================================
+
+# - might be missing: born (int of length 4), constituency (chr),
+#   photo (chr, folder/file.ext)
+# - never missing: sex (chr, F/M), nyears (int), url (chr, URL),
+#   party (chr, mapped to colors)
+
+cat("Missing", sum(is.na(dep$born)), "years of birth\n")
+stopifnot(is.integer(dep$born) & nchar(dep$born) == 4 | is.na(dep$born))
+
+cat("Missing", sum(is.na(dep$constituency)), "constituencies\n")
+stopifnot(is.character(dep$constituency))
+
+cat("Missing", sum(is.na(dep$photo)), "photos\n")
+stopifnot(is.character(dep$photo) & grepl("^photos(_\\w{2})?/(.*)\\.\\w{3}", dep$photo) | is.na(dep$photo))
+
+stopifnot(!is.na(dep$sex) & dep$sex %in% c("F", "M"))
+stopifnot(!is.na(dep$nyears) & is.integer(dep$nyears))
+stopifnot(!is.na(dep$url) & grepl("^http(s)?://(.*)", dep$url))
+stopifnot(dep$party %in% names(colors))

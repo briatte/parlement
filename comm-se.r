@@ -1,18 +1,17 @@
 # add committee co-memberships
 
-load("data/net_fr_se.rda")
 sponsors = dir("raw_se/senateur", pattern = "html$", full.names = TRUE)
 raw = data_frame()
 
 s = read.csv("data/sponsors-se.csv", stringsAsFactors = FALSE)
 
-for(i in sponsors) {
+for (i in sponsors) {
   
   h = htmlParse(i, encoding = "UTF-8")
   n = xpathSApply(h, "//li[contains(text(), 'ommission')]", xmlValue)
   n = tolower(str_clean(gsub("(.*)(ommission)(.*)", "c\\2\\3", n)))
   
-  if(length(n))
+  if (length(n))
     raw = rbind(raw, data_frame(i, n))
   
 }
@@ -27,22 +26,22 @@ write.csv(summarise(group_by(raw, n), members = n()) %>%
 comm = data_frame(u = unique(raw$n))
 
 # add sponsor columns
-for(i in sponsors)
+for (i in sponsors)
   comm[, gsub("raw_se/senateur/|\\.html", "", i) ] = 0
 
-for(i in colnames(comm)[ -1 ])
+for (i in colnames(comm)[ -1 ])
   comm[ , i ] = as.numeric(comm$u %in% raw$n[ raw$i == i ])
 
-stopifnot(s$url %in% names(comm[, -1]))
+stopifnot(gsub("http://www.senat.fr/senateur/|\\.html$", "", s$url) %in% names(comm[, -1]))
 
 # assign co-memberships to networks
-for(i in ls(pattern = "^net_fr_se")) {
+for (i in ls(pattern = "^net_fr_se")) {
   
   n = get(i)
   cat(i, ":", network.size(n), "nodes")
   
   sp = network.vertex.names(n)
-  names(sp) = n %v% "url"
+  names(sp) = gsub("http://www.senat.fr/senateur/|\\.html$", "", n %v% "url")
   
   stopifnot(names(sp) %in% colnames(comm))
   
@@ -62,7 +61,7 @@ for(i in ls(pattern = "^net_fr_se")) {
   e = data_frame(i = n %e% "source", j = n %e% "target")
   e$committee = NA
   
-  for(j in 1:nrow(e))
+  for (j in 1:nrow(e))
     e$committee[ j ] = m[ e$i[ j ], e$j[ j ] ]
   
   cat(" co-memberships:",
@@ -84,6 +83,3 @@ for(i in ls(pattern = "^net_fr_se")) {
   assign(paste0("co", i), nn)
   
 }
-
-save(list = ls(pattern = "^((co)?net|edges|bills)_fr_se\\d{1,2}$"), 
-     file = "data/net_fr_se.rda")

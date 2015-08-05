@@ -28,7 +28,7 @@ The script will clean up by removing the Dosleg database from PostgreSQL, but it
 
 ## Additional functions
 
-An extra set of routines applied to both houses is coded into `functions-fr.r`: sponsor names are simplified by stripping some particles and punctuation, sponsor constituencies are geocoded, and bills are split according to the elections dates of the National Assembly.
+An extra set of routines applied to both houses is coded into `functions-fr.r`.
 
 # DATA
 
@@ -66,12 +66,8 @@ The sponsors data has one row per sponsor-legislature. Both houses hold the same
 - `party` -- political party, abbreviated (see below)
 - `constituency` -- constituency, stored as the string to its Wikipedia Francophone entry
 - `nyears` -- number of years in office before start of legislature
-- `lon` -- constituency longitude
-- `lat` -- constituency latitude
 - `url` -- sponsor URL, shortened to unique identifier
 - `photo` -- numeric dummy coding for the presence of a photo
-
-The constituency coordinates are provided as CSV files in the `data` folder of the repository. They can be rebuilt from scratch by uncommenting a few lines of code in the `sponsors*.r` scripts, which require the [`ggmap`](https://github.com/dkahle/ggmap) package by [David Kahle](https://github.com/dkahle) and [Hadley Wickham](https://github.com/hadley).
 
 ## Parties
 

@@ -1,6 +1,7 @@
 # data
 
 library(dplyr)
+library(httr)
 library(stringr)
 library(XML)
 
@@ -14,7 +15,3 @@ library(sna)
 
 library(ggplot2)
 library(grid)
-
-# extras
-
-# library(ggmap) # to optionally geocode the constituencies

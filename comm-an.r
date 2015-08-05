@@ -1,18 +1,21 @@
 # add committee co-memberships
 
-load("data/net_fr_an.rda")
 sponsors = dir("raw_an/mps")
 raw = data_frame()
 
 s = read.csv("data/sponsors-an.csv", stringsAsFactors = FALSE)
 
 cat("Legislature 14\n")
-h = htmlParse("http://www.assemblee-nationale.fr/14/tribun/xml/liste_commissions.asp", encoding = "UTF-8")
+f = "raw_an/comm-14.html"
+if (!file.exists(f))
+  download.file("http://www.assemblee-nationale.fr/14/tribun/xml/liste_commissions.asp",
+                f, mode = "wb", quiet = TRUE)
+h = htmlParse(f, encoding = "UTF-8")
 n = xpathSApply(h, "//div[@id='corps']//ul[@class='liste']/li/a", xmlValue)
 n = str_clean(n)
 l = xpathSApply(h, "//div[@id='corps']//ul[@class='liste']/li/a/@href")
 
-for(i in l[ grepl("Commission", n) ]) {
+for (i in l[ grepl("Commission", n) ]) {
   
   cat(n[ l == i ], "\n")
   h = htmlParse(paste0("http://www.assemblee-nationale.fr", i), encoding = "UTF-8")
@@ -28,12 +31,16 @@ for(i in l[ grepl("Commission", n) ]) {
 }
 
 cat("Legislature 13\n")
-h = htmlParse("http://www.assemblee-nationale.fr/13/tribun/xml/liste_commissions.asp", encoding = "UTF-8")
+f = "raw_an/comm-13.html"
+if (!file.exists(f))
+  download.file("http://www.assemblee-nationale.fr/13/tribun/xml/liste_commissions.asp",
+                f, mode = "wb", quiet = TRUE)
+h = htmlParse(f, encoding = "UTF-8")
 n = xpathSApply(h, "//div[@id='corps']//ul[@class='liste']/li/a", xmlValue)
 n = str_clean(n)
 l = xpathSApply(h, "//div[@id='corps']//ul[@class='liste']/li/a/@href")
 
-for(i in l) {
+for (i in l) {
   
   cat(n[ l == i ], "\n")
   h = htmlParse(paste0("http://www.assemblee-nationale.fr", i), encoding = "UTF-8")
@@ -49,12 +56,16 @@ for(i in l) {
 }
 
 cat("Legislature 12\n")
-h = htmlParse("http://www.assemblee-nationale.fr/12/tribun/commissions.asp", encoding = "UTF-8")
+f = "raw_an/comm-12.html"
+if (!file.exists(f))
+  download.file("http://www.assemblee-nationale.fr/12/tribun/commissions.asp",
+                f, mode = "wb", quiet = TRUE)
+h = htmlParse(f, encoding = "UTF-8")
 n = xpathSApply(h, "//a[contains(@href, 'gene3')]", xmlValue)
 n = str_clean(n)
 l = xpathSApply(h, "//a[contains(@href, 'gene3')]/@href")
 
-for(i in l) {
+for (i in l) {
   
   cat(n[ l == i ], "\n")
   h = htmlParse(paste0("http://www.assemblee-nationale.fr/12/tribun/", i), encoding = "UTF-8")
@@ -70,12 +81,16 @@ for(i in l) {
 }
 
 cat("Legislature 11\n")
-h = htmlParse("http://www.assemblee-nationale.fr/11/tribun/commissions.asp", encoding = "UTF-8")
+f = "raw_an/comm-11.html"
+if (!file.exists(f))
+  download.file("http://www.assemblee-nationale.fr/11/tribun/commissions.asp",
+                f, mode = "wb", quiet = TRUE)
+h = htmlParse(f, encoding = "UTF-8")
 n = xpathSApply(h, "//a[contains(@href, 'gene3')]", xmlValue)
 n = str_clean(n)
 l = xpathSApply(h, "//a[contains(@href, 'gene3')]/@href")
 
-for(i in l) {
+for (i in l) {
   
   cat(n[ l == i ], "\n")
   h = htmlParse(paste0("http://www.assemblee-nationale.fr/11/tribun/", i), encoding = "UTF-8")
@@ -103,22 +118,22 @@ raw$u = paste(raw$y, raw$n)
 comm = data_frame(u = unique(raw$u))
 
 # add sponsor columns
-for(i in sponsors)
+for (i in sponsors)
   comm[, gsub("\\.html", "", i) ] = 0
 
-for(i in colnames(comm)[ -1 ])
+for (i in colnames(comm)[ -1 ])
   comm[ , i ] = as.numeric(comm$u %in% raw$u[ raw$i == i ])
 
 stopifnot(s$url %in% names(comm[, -1]))
 
 # assign co-memberships to networks
-for(i in ls(pattern = "^net_fr_an1[1-4]")) {
+for (i in 11:14) {
   
-  n = get(i)
+  n = get(paste0("net_fr_an", legs[ as.character(i) ]))
   cat(i, ":", network.size(n), "nodes")
   
   sp = network.vertex.names(n)
-  names(sp) = n %v% "url"
+  names(sp) = gsub("\\D", "", n %v% "url")
   
   stopifnot(names(sp) %in% colnames(comm))
   
@@ -138,7 +153,7 @@ for(i in ls(pattern = "^net_fr_an1[1-4]")) {
   e = data_frame(i = n %e% "source", j = n %e% "target")
   e$committee = NA
   
-  for(j in 1:nrow(e))
+  for (j in 1:nrow(e))
     e$committee[ j ] = m[ e$i[ j ], e$j[ j ] ]
   
   cat(" co-memberships:",
@@ -154,12 +169,9 @@ for(i in ls(pattern = "^net_fr_an1[1-4]")) {
   stopifnot(!is.na(nn %e% "committee"))
   
   n %e% "committee" = e$committee
-  assign(i, n)
+  assign(paste0("net_fr_an", legs[ as.character(i) ]), n)
   
   nn %n% "committees" = as.table(rowSums(M))
-  assign(paste0("co", i), nn)
+  assign(paste0("conet_fr_an", legs[ as.character(i) ]), nn)
   
 }
-
-save(list = ls(pattern = "^((co)?net|edges|bills)_fr_an\\d{1,2}$"), 
-     file = "data/net_fr_an.rda")

@@ -1,17 +1,17 @@
 root = "http://www.assemblee-nationale.fr"
 bills = "data/bills-an.csv"
 
-if(!file.exists(bills)) {
+if (!file.exists(bills)) {
   
   doc = data_frame()
 
-  for(x in sessions) {
+  for (x in sessions) {
     
     cat("Parsing index", sprintf("%2.0f", x))
     
     file = paste0("raw_an/bills-", x, ".html")
     
-    if(!file.exists(file))
+    if (!file.exists(file))
       download.file(paste0(root, "/", x, "/documents/index-proposition.asp"),
                     file, mode = "wb", quiet = TRUE)
     
@@ -35,16 +35,16 @@ if(!file.exists(bills)) {
     data$co = data$co_url = NA
     
     # download files
-    for(i in rev(data$url)) {
+    for (i in rev(data$url)) {
       
       file = paste0("raw_an/bills/",
                     gsub("/(\\d+)/(.*)", "\\1", i), "-", # session
                     gsub(".asp", ".html", str_extract(i, "(\\w|-)+.asp")))
       
-      if(!file.exists(file))
+      if (!file.exists(file))
         try(download.file(paste0(root, i), file, mode = "wb", quiet = TRUE), silent = TRUE)
       
-      if(!file.info(file)$size) {
+      if (!file.info(file)$size) {
         
         cat(sprintf("%4.0f", which(data$url == i)), ": no bill at", paste0(root, i), "\n")
         file.remove(file)
@@ -60,7 +60,7 @@ if(!file.exists(bills)) {
         au = xpathSApply(h, "//div[contains(@align, 'left')][2]/a[contains(@href, 'tribun') or contains(@href, 'senateur') or contains(@href, 'senfic')]", xmlValue)
         au_url = xpathSApply(h, "//div[contains(@align, 'left')][2]/a[contains(@href, 'tribun') or contains(@href, 'senateur') or contains(@href, 'senfic')]/@href")
         
-        if(!length(r) | !length(au)) {
+        if (!length(r) | !length(au)) {
           
           cat(file, ": no sponsor information\n")
           next
@@ -76,16 +76,16 @@ if(!file.exists(bills)) {
         data$au_url[ data$url == i ] = paste0(au_url, collapse = ";")
         
         co = xpathSApply(h, "//div[contains(@align, 'left')][2]/a[contains(@href, 'cosignataires')]/@href")
-        if(length(co)) {
+        if (length(co)) {
           
           co = gsub("javascript:ouvre_popup\\('(.*)'\\)", "-\\1", co)
           file = gsub("\\.html", co, file)
           
-          if(!file.exists(file))
+          if (!file.exists(file))
             try(download.file(paste0(root, gsub("/(\\d+)/(.*)", "/\\1/", i), gsub("-", "dossiers/", co)),
                               file, mode = "wb", quiet = TRUE), silent = TRUE)
           
-          if(!file.info(file)$size) {
+          if (!file.info(file)$size) {
             
             cat(sprintf("%4.0f", which(data$url == i)), ": no cosponsor(s) at", paste0(root, i), "\n")        
             file.remove(file)
@@ -163,15 +163,15 @@ table(doc$n_a > 1, doc$legislature)
 
 cat("Finding sponsors for", nrow(doc), "bills\n")
 doc$sponsors = NA
-for(i in nrow(doc):1) {
+for (i in nrow(doc):1) {
   ##cat(i)
   n = unlist(strsplit(doc$au[i], ";"))
   u = unlist(strsplit(doc$au_url[i], ";"))
-  if(doc$n_co[i] > 0) {
+  if (doc$n_co[i] > 0) {
     n = c(n, unlist(strsplit(doc$co[i], ";")))
     u = c(u, unlist(strsplit(doc$co_url[i], ";")))
   }
-  if(!grepl("tribun", u[1])) {
+  if (!grepl("tribun", u[1])) {
     ##cat(": senator bill\n")
     doc$sponsors[i] = NA
   } else {

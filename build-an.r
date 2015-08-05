@@ -1,4 +1,4 @@
-for(ii in unique(doc$legislature)) {
+for (ii in doc$legislature %>% unique %>% sort) {
   
   data = subset(doc, legislature == ii & n_au > 1)
   sp = subset(dep, legislature == ii)
@@ -6,7 +6,7 @@ for(ii in unique(doc$legislature)) {
   u = unlist(strsplit(data$sponsors, ";"))
   u = u[ !u %in% sp$name ]
   
-  if(length(u)) {
+  if (length(u)) {
     
     cat("AN Legislature", ii, ": missing", n_distinct(u), "sponsor(s)")
     u = grepl(paste0("^", paste0(unique(u), collapse = "|"), ";"), data$sponsors)
@@ -82,11 +82,16 @@ for(ii in unique(doc$legislature)) {
   
   n = network(edges[, 1:2 ], directed = TRUE)
   
-  n %n% "country" = meta[1]
-  n %n% "title" = paste("Assemblée nationale", paste0(range(unique(substr(data$date, 1, 4))),
-                                                      collapse = " to "))
+  n %n% "country" = meta[ "cty" ] %>% as.character
+  n %n% "lang" = meta[ "lang" ] %>% as.character
+  n %n% "years" = paste0(legs[ as.character(ii) ], "-", legs[ as.character(ii + 1) ])
+  n %n% "legislature" = as.character(ii)
+  n %n% "chamber" = meta[ "an" ] %>% as.character
+  n %n% "type" = meta[ "type-an" ] %>% as.character
+  n %n% "ipu" = meta[ "ipu-an" ] %>% as.integer
+  n %n% "seats" = meta[ "seats-an" ] %>% as.integer
   
-  n %n% "n_bills" = sum(subset(doc, legislature == ii)$n_au > 1)
+  n %n% "n_cosponsored" = sum(subset(doc, legislature == ii)$n_au > 1)
   n %n% "n_sponsors" = table(subset(doc, legislature == ii)$n_au)
   
   n_au = as.vector(n_au[ network.vertex.names(n) ])
@@ -101,22 +106,15 @@ for(ii in unique(doc$legislature)) {
   
   rownames(sp) = sp$name
   
-  n %v% "url" = as.character(sp[ network.vertex.names(n), "url" ])  
-  n %v% "sex" = as.character(sp[ network.vertex.names(n), "sex" ])
-  n %v% "born" = as.numeric(substr(sp[ network.vertex.names(n), "born" ], 1, 4))
-  n %v% "party" = as.character(sp[ network.vertex.names(n), "party" ])
-  n %v% "partyname" = as.character(groups[ n %v% "party" ])
-  n %v% "lr" = as.numeric(scores[ n %v% "party" ])
-  n %v% "constituency" = as.character(sp[ network.vertex.names(n), "constituency" ])
-  n %v% "lon" = as.numeric(sp[ network.vertex.names(n), "lon" ])
-  n %v% "lat" = as.numeric(sp[ network.vertex.names(n), "lat" ])
-  n %v% "photo" = as.character(sp[ network.vertex.names(n), "photo" ])
-  n %v% "nyears" = as.numeric(sp[ network.vertex.names(n), "nyears" ])
-  
-  # unweighted degree
-  n %v% "degree" = degree(n)
-  q = n %v% "degree"
-  q = as.numeric(cut(q, unique(quantile(q)), include.lowest = TRUE))
+  n %v% "url" = sp[ network.vertex.names(n), "url" ]
+  n %v% "sex" = sp[ network.vertex.names(n), "sex" ]
+  n %v% "born" = sp[ network.vertex.names(n), "born" ]
+  n %v% "party" = sp[ network.vertex.names(n), "party" ]
+  n %v% "partyname" = groups[ n %v% "party" ] %>% as.character
+  n %v% "lr" = scores[ n %v% "party" ] %>% as.numeric
+  n %v% "constituency" = sp[ network.vertex.names(n), "constituency" ]
+  n %v% "photo" = sp[ network.vertex.names(n), "photo" ]
+  n %v% "nyears" = sp[ network.vertex.names(n), "nyears" ]
   
   set.edge.attribute(n, "source", as.character(edges[, 1])) # cosponsor
   set.edge.attribute(n, "target", as.character(edges[, 2])) # first author
@@ -129,12 +127,12 @@ for(ii in unique(doc$legislature)) {
   # network plot
   #
   
-  if(plot) {
+  if (plot) {
     
-    save_plot(n, file = paste0("plots/net_fr_an", ii),
+    save_plot(n, paste0("plots/net_fr_an", legs[ as.character(ii) ], "-", legs[ as.character(ii + 1) ]),
               i = colors[ sp[ n %e% "source", "party" ] ],
               j = colors[ sp[ n %e% "target", "party" ] ], 
-              q, colors, order)
+              mode, colors)
     
   }
   
@@ -142,25 +140,17 @@ for(ii in unique(doc$legislature)) {
   # save objects
   #
   
-  assign(paste0("net_fr_an", substr(ii, 1, 4)), n)
-  assign(paste0("edges_fr_an", substr(ii, 1, 4)), edges)
-  assign(paste0("bills_fr_an", substr(ii, 1, 4)), data)
+  assign(paste0("net_fr_an", legs[ as.character(ii) ]), n)
+  assign(paste0("edges_fr_an", legs[ as.character(ii) ]), edges)
+  assign(paste0("bills_fr_an", legs[ as.character(ii) ]), data)
   
   #
   # export gexf
   #
   
-  if(gexf) {
-    
-    n %v% "lat" = ifelse(is.na(n %v% "lat"), 45, n %v% "lat")
-    n %v% "lon" = ifelse(is.na(n %v% "lon"), -4, n %v% "lon")
-    n %v% "lat" = entropize(n %v% "lat", network.size(n))
-    n %v% "lon" = entropize(n %v% "lon", network.size(n))
-    
-    save_gexf(paste0("net_fr_an", ii), n, c(meta[1], "Assemblée nationale"), mode, colors,
-              extra = c("constituency", "lon", "lat"))
-    
-  }
+  if (gexf)
+    save_gexf(n, paste0("net_fr_an", legs[ as.character(ii) ], "-", legs[ as.character(ii + 1) ]),
+              mode, colors)
   
 }
 
@@ -168,10 +158,7 @@ for(ii in unique(doc$legislature)) {
 # save
 #
 
-if(gexf)
-  zip("net_fr_an.zip", dir(pattern = "^net_fr_an\\d{1,2}\\.gexf$"))
-
-save(list = ls(pattern = "^(net|edges|bills)_fr_an\\d{1,2}$"), 
-     file = "data/net_fr_an.rda")
+if (gexf)
+  zip("net_fr_an.zip", dir(pattern = "^net_fr_an\\d{4}-\\d{4}\\.gexf$"))
 
 # kthxbye

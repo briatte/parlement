@@ -1,13 +1,13 @@
 bills = c("auteur", "ecr", "texte")
 bills = paste0("data/dosleg-", bills, ".csv")
-if(any(!file.exists(bills)))
+if (any(!file.exists(bills)))
   stop(paste0("This script relies on data exported from the Dosleg database.\n",
               "Run psql.sh and see the README for detailed instructions."))
 
 file = "data/bi_se.rda"
 bills = "data/bills-se.csv"
 
-if(!file.exists(bills)) {
+if (!file.exists(bills)) {
   
   # URL match variable
   s$autmat = toupper(str_extract(s$url, "[0-9]+(.*)"))
@@ -28,7 +28,7 @@ if(!file.exists(bills)) {
   group = with(sen, is.na(prenom) | nchar(prenom) < 3 | prenom == "groupe")
   
   missing = sen$nom[ !match & sen$autmat %in% unique(s$autmat) ]
-  if(length(missing))
+  if (length(missing))
     cat("Missing:", paste0(missing, collapse = ", "), "\n")
   
   sen = sen[ !group & match, ]
@@ -37,13 +37,13 @@ if(!file.exists(bills)) {
              by = "autmat", all.x = TRUE)
   
   nul = is.na(sp$autcod)
-  if(sum(nul)) {
+  if (sum(nul)) {
     
     # unrecognized authors
     dnk = grepl("s(é|e)nateur", sp$autfct[ nul ], ignore.case = TRUE)
     
     # warning if author status is senator
-    if(any(dnk))
+    if (any(dnk))
       cat("Dropping:", sum(dnk), "senators (no sponsorships)\n")
     
     # drop senators for very short periods
@@ -86,7 +86,7 @@ if(!file.exists(bills)) {
   sample = sample & !any(with(s, is.na(name), is.na(ecrnumtri)))
   
   # out-of-sample
-  if(any(!sample)) {
+  if (any(!sample)) {
     
     cat("Dropping:", nrow(s[ !sample, ]), "bills (not by a senator)\n")
     
