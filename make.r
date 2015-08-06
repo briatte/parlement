@@ -7,10 +7,25 @@ source("parties.r")
 
 # folders
 
-dir.create("data"      , showWarnings = FALSE)
-dir.create("photos_an" , showWarnings = FALSE)
-dir.create("photos_se" , showWarnings = FALSE)
-dir.create("plots"     , showWarnings = FALSE)
+dir.create("data"  , showWarnings = FALSE)
+dir.create("plots" , showWarnings = FALSE)
+
+if (file.exists("photos_an.zip"))
+  unzip("photos_an.zip")
+
+dir.create("photos_an", showWarnings = FALSE)
+
+if (file.exists("photos_se.zip"))
+  unzip("photos_se.zip")
+
+dir.create("photos_se", showWarnings = FALSE)
+
+if (file.exists("raw_an.zip"))
+  unzip("raw_an.zip")
+
+if (file.exists("raw_se.zip"))
+  unzip("raw_se.zip")
+
 dir.create("raw_an"    , showWarnings = FALSE)
 dir.create("raw_se"    , showWarnings = FALSE)
 
