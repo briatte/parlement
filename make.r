@@ -26,8 +26,10 @@ if (file.exists("raw_an.zip"))
 if (file.exists("raw_se.zip"))
   unzip("raw_se.zip")
 
-dir.create("raw_an"    , showWarnings = FALSE)
-dir.create("raw_se"    , showWarnings = FALSE)
+dir.create("raw_an"          , showWarnings = FALSE)
+dir.create("raw_an/bills"    , showWarnings = FALSE)
+dir.create("raw_se"          , showWarnings = FALSE)
+dir.create("raw_se/senateur" , showWarnings = FALSE)
 
 # parameters
 
