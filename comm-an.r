@@ -17,16 +17,31 @@ l = xpathSApply(h, "//div[@id='corps']//ul[@class='liste']/li/a/@href")
 
 for (i in l[ grepl("Commission", n) ]) {
   
-  cat(n[ l == i ], "\n")
-  h = htmlParse(paste0("http://www.assemblee-nationale.fr", i), encoding = "UTF-8")
-  a = xpathSApply(h, "//div[@id='organe']//a[contains(@href, 'tribun/fiches')]/@href")
-  a = paste0("http://www.assemblee-nationale.fr", a)
-  raw = rbind(raw, data.frame(
-    y = 14,
-    i = unique(s$url[ s$url_an %in% a ]),
-    n = n[ which(l == i) ],
-    l = i,
-    stringsAsFactors = FALSE))
+
+  f = basename(i) %>% str_replace("xml$", "html") %>% str_c("raw_an/comm-14-", .)
+  cat("14.", n[ l == i ], "[", f, "]")
+  
+  if (!file.exists(f))
+    download.file(paste0("http://www.assemblee-nationale.fr", i), f, mode = "wb", quiet = TRUE)
+  
+  a = htmlParse(f, encoding = "UTF-8") %>%
+    xpathSApply("//a[@class='instance-composition-nom']", xmlValue) %>%
+    str_replace("^M(me)?\\.?\\s", "") %>%
+    str_replace("-", " ") %>%
+    clean_names
+  
+  cat(":", sum(!a %in% s$name), "missing:", paste0(a[ !a %in% s$name ], collapse = ", "), "\n")
+  
+  if (!length(a)) {
+    warning(f, ": committee has no members")
+  } else {
+    raw = rbind(raw, data.frame(
+      y = 14,
+      i = unique(s$url[ s$name %in% a ]),
+      n = n[ which(l == i) ],
+      l = i,
+      stringsAsFactors = FALSE))
+  }
   
 }
 
@@ -42,17 +57,31 @@ l = xpathSApply(h, "//div[@id='corps']//ul[@class='liste']/li/a/@href")
 
 for (i in l) {
   
-  cat(n[ l == i ], "\n")
-  h = htmlParse(paste0("http://www.assemblee-nationale.fr", i), encoding = "UTF-8")
-  a = xpathSApply(h, "//div[@id='organe']//a[contains(@href, 'tribun/fiches')]/@href")
-  a = paste0("http://www.assemblee-nationale.fr", a)
-  raw = rbind(raw, data.frame(
-    y = 13,
-    i = unique(s$url[ s$url_an %in% a ]),
-    n = n[ which(l == i) ],
-    l = i,
-    stringsAsFactors = FALSE))
+  f = basename(i) %>% str_replace("xml$", "html") %>% str_c("raw_an/comm-13-", .)
+  cat("13.", n[ l == i ], "[", f, "]")
   
+  if (!file.exists(f))
+    download.file(paste0("http://www.assemblee-nationale.fr", i), f, mode = "wb", quiet = TRUE)
+  
+  a = htmlParse(f, encoding = "UTF-8") %>%
+    xpathSApply("//a[@class='instance-composition-nom']", xmlValue) %>%
+    str_replace("^M(me)?\\.?\\s", "") %>%
+    str_replace("-", " ") %>%
+    clean_names
+  
+  cat(":", sum(!a %in% s$name), "missing:", paste0(a[ !a %in% s$name ], collapse = ", "), "\n")
+  
+  if (!length(a)) {
+    warning(f, ": committee has no members")
+  } else {
+    raw = rbind(raw, data.frame(
+      y = 13,
+      i = unique(s$url[ s$name %in% a ]),
+      n = n[ which(l == i) ],
+      l = i,
+      stringsAsFactors = FALSE))
+  }
+
 }
 
 cat("Legislature 12\n")
@@ -67,10 +96,16 @@ l = xpathSApply(h, "//a[contains(@href, 'gene3')]/@href")
 
 for (i in l) {
   
-  cat(n[ l == i ], "\n")
-  h = htmlParse(paste0("http://www.assemblee-nationale.fr/12/tribun/", i), encoding = "UTF-8")
-  a = xpathSApply(h, "//table[@width='90%']//a[contains(@href, 'fiches_id')]/@href")
-  a = gsub("../fiches_id", "http://www.assemblee-nationale.fr/12/tribun", a)
+  cat("12.", n[ l == i ], "\n")
+
+  f = basename(i) %>% str_replace("\\.asp(.*)", ".html") %>% str_c("raw_an/comm-12-", .)
+  if (!file.exists(f))
+    download.file(paste0("http://www.assemblee-nationale.fr/12/tribun/", i), f, mode = "wb", quiet = TRUE)
+  
+  a = htmlParse(f, encoding = "UTF-8") %>%
+    xpathSApply("//table[@width='90%']//a[contains(@href, 'fiches_id')]/@href") %>%
+    gsub("../fiches_id", "http://www.assemblee-nationale.fr/12/tribun", .)
+  
   raw = rbind(raw, data.frame(
     y = 12,
     i = unique(s$url[ s$url_an %in% a ]),
@@ -92,10 +127,16 @@ l = xpathSApply(h, "//a[contains(@href, 'gene3')]/@href")
 
 for (i in l) {
   
-  cat(n[ l == i ], "\n")
-  h = htmlParse(paste0("http://www.assemblee-nationale.fr/11/tribun/", i), encoding = "UTF-8")
-  a = xpathSApply(h, "//a[contains(@href, 'fiches_id')]/@href")
-  a = paste0("http://www.assemblee-nationale.fr/11/tribun/", a)
+  cat("11.", n[ l == i ], "\n")
+  
+  f = basename(i) %>% str_replace("\\.asp(.*)", ".html") %>% str_c("raw_an/comm-11-", .)
+  if (!file.exists(f))
+    download.file(paste0("http://www.assemblee-nationale.fr/11/tribun/", i), f, mode = "wb", quiet = TRUE)
+  
+  a = htmlParse(f, encoding = "UTF-8") %>%
+    xpathSApply("//a[contains(@href, 'fiches_id')]/@href") %>%
+    paste0("http://www.assemblee-nationale.fr/11/tribun/", .)
+  
   raw = rbind(raw, data.frame(
     y = 11,
     i = unique(s$url[ s$url_an %in% a ]),
