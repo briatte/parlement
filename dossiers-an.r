@@ -19,7 +19,7 @@ if (!file.exists(bills)) {
     h = htmlParse(file, encoding = "UTF-8")
     h = xpathSApply(h, "//a[contains(@href, '/dossiers/')]/@href")
     
-    data = data_frame(legislature = x, url = gsub("(.asp)(.*)", "\\1", h))
+    data = data_frame(legislature = x, url = gsub("\\.asp(.*)", ".asp", h))
     data = unique(data)
     
     # all bills come from the right legislature
@@ -39,14 +39,18 @@ if (!file.exists(bills)) {
       
       file = paste0("raw_an/bills/",
                     gsub("/(\\d+)/(.*)", "\\1", i), "-", # session
-                    gsub(".asp", ".html", str_extract(i, "(\\w|-)+.asp")))
+                    gsub("\\.asp$", ".html", str_extract(i, "(\\w|-)+\\.asp")))
       
       if (!file.exists(file))
         try(download.file(paste0(root, i), file, mode = "wb", quiet = TRUE), silent = TRUE)
       
-      if (!file.info(file)$size) {
+      if (!file.exists(file)) {
         
         cat(sprintf("%4.0f", which(data$url == i)), ": no bill at", paste0(root, i), "\n")
+
+      } else if (file.exists(file) && !file.info(file)$size) {
+        
+        cat(sprintf("%4.0f", which(data$url == i)), ": empty page at", paste0(root, i), "\n")
         file.remove(file)
         
       } else {

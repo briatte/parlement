@@ -17,7 +17,6 @@ l = xpathSApply(h, "//div[@id='corps']//ul[@class='liste']/li/a/@href")
 
 for (i in l[ grepl("Commission", n) ]) {
   
-
   f = basename(i) %>% str_replace("xml$", "html") %>% str_c("raw_an/comm-14-", .)
   cat("14.", n[ l == i ], "[", f, "]")
   
