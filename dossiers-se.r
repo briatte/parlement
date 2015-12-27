@@ -4,13 +4,12 @@ if (any(!file.exists(bills)))
   stop(paste0("This script relies on data exported from the Dosleg database.\n",
               "Run psql.sh and see the README for detailed instructions."))
 
-file = "data/bi_se.rda"
 bills = "data/bills-se.csv"
 
 if (!file.exists(bills)) {
   
   # URL match variable
-  s$autmat = toupper(str_extract(s$url, "[0-9]+(.*)"))
+  s$autmat = toupper(str_extract(s$url, "[0-9]+[a-z]?"))
   
   # load sponsor UIDs
   sen = read.csv("data/dosleg-auteur.csv", stringsAsFactors = FALSE)
@@ -48,14 +47,14 @@ if (!file.exists(bills)) {
     
     # drop senators for very short periods
     cat("Dropping:", n_distinct(sp$name[ nul ][ !dnk ]),
-        "sponsors (not senators)\n")
+        "sponsors (short-time mandates)\n")
     
     sp = sp[ !is.na(sp$autcod), ]
     
   }
   
   # load cross-table identifiers
-  s = read.csv("data/dosleg-ecr.csv")
+  s = read.csv("data/dosleg-ecr.csv", stringsAsFactors = FALSE)
   s = merge(s, unique(sp[, c("autcod", "autfct", "name", "party", "url") ]),
             by = "autcod", all.x = TRUE)
   
@@ -99,7 +98,7 @@ if (!file.exists(bills)) {
   names(s)[ names(s) == "url" ] = "sponsors"
   
   # load Senator bills
-  b = read.csv("data/dosleg-texte.csv")
+  b = read.csv("data/dosleg-texte.csv", stringsAsFactors = FALSE)
   b = subset(b, texcod %in% unique(s$uid))
   
   cat("Parsing:", n_distinct(b$texcod), "bills")
@@ -120,12 +119,13 @@ if (!file.exists(bills)) {
   
   b = merge(b, s[ s$ecrnumtri == 1, c("uid", "sponsors") ], by = "uid", all.x = TRUE)
   
-  b = merge(b, aggregate(sponsors ~ uid, paste0, collapse = ";", data = subset(s, status == "cosponsor")),
+  b = merge(b,
+            aggregate(sponsors ~ uid, paste0, collapse = ";", data = subset(s, status == "cosponsor")),
             by = "uid", all.x = TRUE)
   
   b$sponsors = paste0(b$sponsors.x, ";", b$sponsors.y)
   b$sponsors = gsub(";NA$", "", b$sponsors)
-  
+
   b = b[, c("legislature", "uid", "texte", "url", "date", "sponsors") ]
   b$n_au = 1 + str_count(b$sponsors, ";")
   

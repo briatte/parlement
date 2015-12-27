@@ -56,7 +56,7 @@ if (!file.exists(sponsors)) {
         from = text[ grepl("Elu[e]? le|Sénat(eur|rice) le", text) ]
         from = str_extract(from[1], "[0-9]{4}") # earliest start of mandate
         
-        to = gsub("(\\D+) le (.*)", "\\2", text [ grepl("(Démission|Fin de mandat) le", text) ])
+        to = gsub("(\\D+) le (.*)", "\\2", text[ grepl("(Démission|Fin de mandat) le", text) ])
         
         if (ancien & length(to))
           to = str_extract(to[1], "[0-9]{4}") # should always be unique
@@ -154,12 +154,18 @@ if (!file.exists(sponsors)) {
     j = gsub("html$", "jpg", gsub("http://www.senat.fr/senateur/", "", i))
     photo = paste0("photos_se/", j)
     
-    if (!file.exists(photo))
-      try(download.file(paste0("http://www.senat.fr/senimg/", j),
+    if (!file.exists(photo)) {
+      
+      try(download.file(paste0("http://www.senat.fr/sencommuimg/", j),
                         photo, mode = "wb", quiet = TRUE), silent = TRUE)
+      
+    }
     
-    if (!file.info(photo)$size)
+    if (file.exists(photo) && !file.info(photo)$size) {
+      
       file.remove(photo)
+      
+    }
     
     if (file.exists(photo))
       sen$photo[ sen$url == i ] = photo
@@ -167,9 +173,6 @@ if (!file.exists(sponsors)) {
   }
   
   sen$legislature = as.integer(sen$legislature)
-  
-  # picture is not a JPG portrait
-  sen$photo[ sen$url == "roger_coupin_maryse07002g" ] = 0
   
   # clean names
   sen$name = clean_names(sen$fullname)

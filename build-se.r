@@ -1,6 +1,5 @@
 # reload sponsors
 sen = read.csv(sponsors, stringsAsFactors = FALSE)
-sen$url = gsub("http://www.senat.fr/senateur/|\\.html", "", sen$url)
 
 for (ii in doc$legislature %>% unique %>% sort) {
   
@@ -113,7 +112,7 @@ for (ii in doc$legislature %>% unique %>% sort) {
   
   rownames(sp) = sp$name
   
-  n %v% "url" = paste0("http://www.senat.fr/senateur/", sp[ network.vertex.names(n), "url" ], ".html")
+  n %v% "url" = sp[ network.vertex.names(n), "url" ]
   n %v% "sex" = sp[ network.vertex.names(n), "sex" ]
   n %v% "born" = sp[ network.vertex.names(n), "born" ]
   n %v% "party" = sp[ network.vertex.names(n), "party" ]
